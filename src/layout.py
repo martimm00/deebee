@@ -198,20 +198,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     html.Div(
                                         [
                                             dcc.Checklist(
-                                                options=[
-                                                    {"label": " Cest_moi.csv", "value": "Cest_moi.csv"},
-                                                    {"label": " thisonetoo.csv", "value": "thisonetoo.csv"},
-                                                    {"label": " why_not_one_more_dataset.csv",
-                                                     "value": "why_not_one_more_dataset.csv"},
-                                                    {"label": " asdf.csv", "value": "asdf.csv"},
-                                                    {"label": " fagf.csv", "value": "fagf.csv"},
-                                                    {"label": " ghbfvs.csv", "value": "ghbfvs.csv"},
-                                                    {"label": " bfbv.csv", "value": "bfbv.csv"},
-                                                    {"label": " bfbv.csv", "value": "bfbv.csv"},
-                                                    {"label": " bfbv.csv", "value": "bfbv.csv"},
-                                                    {"label": " bfbv.csv", "value": "bfbv.csv"},
-                                                    {"label": " bfbv.csv", "value": "bfbv.csv"},
-                                                ],
+                                                options=list(),
                                                 value=list(),
                                                 labelStyle={"display": "block"},
                                                 inputStyle={"marginRight": "15px"},
