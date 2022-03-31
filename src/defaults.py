@@ -33,6 +33,14 @@ SUPPORTED_VALIDATION_DATA_TYPES = [
     "float64",
     "str",
 ]
+MAIN_COL_STYLE={
+    "padding": "30px",
+    "height": "80vh",
+    "border": "3px black solid",
+    "borderRadius": "20px",
+    "margin": "10px",
+    "backgroundColor": "#e3e3e3",
+}
 CHECKLIST_DIV_STYLE = {
     "marginTop": "20px",
     "marginBottom": "20px",

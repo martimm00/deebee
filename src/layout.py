@@ -4,7 +4,7 @@ from dash import html
 import dash_uploader as du
 import dash_bootstrap_components as dbc
 
-from src.defaults import EMPTY_STRING, CHECKLIST_DIV_STYLE
+from src.defaults import EMPTY_STRING, MAIN_COL_STYLE, CHECKLIST_DIV_STYLE
 
 
 def create_layout(app: dash.Dash) -> dash.Dash:
@@ -181,14 +181,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                         style={"textAlign": "center"},
                                     ),
                                 ],
-                                style={
-                                    "padding": "30px",
-                                    "height": "80vh",
-                                    "border": "3px black solid",
-                                    "borderRadius": "20px",
-                                    "margin": "10px",
-                                    "backgroundColor": "#e3e3e3",
-                                },
+                                style=MAIN_COL_STYLE,
                             ),
                             dbc.Col(
                                 [
@@ -204,17 +197,10 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                 inputStyle={"marginRight": "15px"},
                                             ),
                                         ],
-                                        style=CHECKLIST_DIV_STYLE
+                                        style=CHECKLIST_DIV_STYLE,
                                     ),
                                 ],
-                                style={
-                                    "padding": "30px",
-                                    "height": "80vh",
-                                    "border": "3px black solid",
-                                    "borderRadius": "20px",
-                                    "margin": "10px",
-                                    "backgroundColor": "#e3e3e3",
-                                },
+                                style=MAIN_COL_STYLE,
                             ),
                             dbc.Col(
                                 [
@@ -222,14 +208,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                         "Validate",
                                     ),
                                 ],
-                                style={
-                                    "padding": "30px",
-                                    "height": "80vh",
-                                    "border": "3px black solid",
-                                    "borderRadius": "20px",
-                                    "margin": "10px",
-                                    "backgroundColor": "#e3e3e3",
-                                },
+                                style=MAIN_COL_STYLE,
                             ),
                         ],
                         justify="evenly"
