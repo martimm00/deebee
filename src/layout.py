@@ -219,15 +219,18 @@ def create_layout(app: dash.Dash) -> dash.Dash:
             # Modals
             dbc.Modal(
                 [
-                    dbc.ModalHeader(dbc.ModalTitle("Header")),
+                    dbc.ModalHeader(
+                        dbc.ModalTitle(id="preview_table_modal_header_title")
+                    ),
                     dbc.ModalBody(id="preview_table_modal_body"),
-                    dbc.ModalFooter(
-                        dbc.Button(
-                            "Close", id="close", className="ms-auto", n_clicks=0
-                        )
-                    )
+                    # dbc.ModalFooter(
+                    #     dbc.Button(
+                    #         "Close", id="close_preview_table_button", className="ms-auto", n_clicks=0
+                    #     )
+                    # )
                 ],
                 id="preview_table_modal",
+                style={"width": "150%"}
             )
         ],
         style={

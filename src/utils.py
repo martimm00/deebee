@@ -1,5 +1,8 @@
 import os
+import csv
 import pandas as pd
+
+from src.low_level_operations import is_csv_file_by_name, get_file_name_by_path
 
 def is_list_empty(list_to_be_checked: list) -> bool:
     """
@@ -49,3 +52,22 @@ def read_dataset(path: os.path, sep=";", n_rows=None, type_dict=None) -> pd.Data
     :return: Pandas DataFrame.
     """
     return pd.read_csv(path, sep=sep, nrows=n_rows, dtype=type_dict)
+
+
+def infer_csv_separator(file_path: os.path) -> str or None:
+    """
+    Infers the separator of a CSV file.
+
+    :param file_path: Path of the CSV file to be checked.
+    :return:
+    """
+    separator = None
+    file_name = get_file_name_by_path(file_path)
+    if is_csv_file_by_name(file_name):
+        try:
+            with open(file_path, "rb") as csvfile:
+                separator = csv.Sniffer().sniff(csvfile.read(1024), delimiters=";,")
+        except TypeError:
+            pass
+    return separator
+

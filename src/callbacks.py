@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 
 from src.defaults import EMPTY_LIST, EMPTY_STRING
 
-from src.utils import get_value, read_dataset, is_list_empty, list_has_one_item
+from src.utils import get_value, read_dataset, is_list_empty, list_has_one_item, infer_csv_separator
 from src.front_end_operations import (
     is_trigger,
     hide_component,
@@ -121,10 +121,12 @@ def set_callbacks(app) -> dash.Dash:
         :return: Bool.
         """
         if len(name.split(".")) == 2:
-            if is_dataset_name(name):
+            name_without_extension, _ = name.split(".")
+            if name_without_extension:
+                if is_dataset_name(name):
 
-                # If the name is not already in use for other datasets
-                return name not in current_names
+                    # If the name is not already in use for other datasets
+                    return name not in current_names
 
         return
 
@@ -219,20 +221,21 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         [
-            Output("table_preview_modal", "is_open"),
-            Output("table_preview_modal_body", "children")
+            Output("preview_table_modal", "is_open"),
+            Output("preview_table_modal_body", "children"),
+            Output("preview_table_modal_header_title", "children")
         ],
         [
             Input("open_preview_table_button", "n_clicks"),
-            Input("close_preview_table_button", "n_clicks"),
+            # Input("close_preview_table_button", "n_clicks"),
         ],
         [
             State("imported_datasets_checklist", "value"),
-            State("table_preview_modal", "is_open")
+            State("preview_table_modal", "is_open")
         ]
     )
     def show_table_preview(
-            open_preview: int, close_preview: int, selected_datasets: list, modal_state
+            open_preview: int, selected_datasets: list, modal_state
     ) -> (bool, list):
         """
         Displays the table preview of the selected imported dataset.
@@ -244,17 +247,19 @@ def set_callbacks(app) -> dash.Dash:
 
         :return: Style for the preview modal, as well as table content for its body.
         """
+        body_content = None
+        modal_title = EMPTY_STRING
         if is_trigger("open_preview_table_button"):
             if list_has_one_item(selected_datasets):
                 dataset_name = get_value(selected_datasets)
                 dataset_path = get_imported_dataset_path(dataset_name)
-                sniffer = csv.Sniffer()
-                sep = sniffer.sniff(dataset_path, delimiters=[";", ",", "|"])
-                dataset = read_dataset(dataset_path
-                table = dbc.Table.from_dataframe(, striped=True, bordered=True, hover=True))
+                separator = infer_csv_separator(dataset_path)
+                dataset = read_dataset(dataset_path, sep=separator, n_rows=10)
+                body_content = dbc.Table.from_dataframe(dataset, striped=True, bordered=True, hover=True)
                 modal_state = True
-        elif is_trigger("close_preview_table_button"):
-            modal_state = False
-
+                modal_title = f"{dataset_name} preview"
+        # elif is_trigger("close_preview_table_button"):
+        #     modal_state = False
+        return modal_state, body_content, modal_title
 
     return app

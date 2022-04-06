@@ -99,6 +99,17 @@ def is_dataset_name(name: str) -> bool:
     return any([ends_in("." + ending, name) for ending in SUPPORTED_DATASET_TYPES])
 
 
+def is_csv_file_by_name(name: str) -> bool:
+    """
+    Returns whether the name belongs to a potential CSV file or not.
+
+    :param name: String to be checked.
+
+    :return: Bool.
+    """
+    return any([ends_in("." + ending, name) for ending in ["csv", "CSV"]])
+
+
 def get_uploaded_dataset_names() -> list:
     """
     Returns the names of all uploaded datasets from the upload path.
@@ -273,6 +284,18 @@ def make_dir(path: os.path) -> None:
     """
     Makes the directory specified in path argument.
 
-    :param path: String with a new path.
+    :param path: A new path.
     """
     os.makedirs(path)
+
+
+def get_file_name_by_path(path: os.path) -> str:
+    """
+    Returns the name of a file based on its path.
+
+    :param path: String
+
+    :return: Path to be checked.
+    """
+    last_name = os.path.basename(path)
+    return last_name if has_extension(last_name) else None
