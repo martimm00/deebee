@@ -22,6 +22,20 @@ def join_paths(path1: os.path, path2: os.path) -> os.path:
     return os.path.join(path1, path2)
 
 
+def has_extension(file_name: str) -> bool:
+    """
+    Returns if a file name contains an extension.
+
+    :param file_name: String with the name of a file.
+
+    :return: Bool.
+    """
+    if "." in file_name:
+        name, extension = file_name.split(".")
+        return name and extension
+    return False
+
+
 def ends_in(ending: str, string: str) -> bool:
     """
     This function returns if a given string ends in a certain ending or extension.
@@ -161,8 +175,8 @@ def get_imported_dataset_path(dataset_name: str) -> os.path:
 
     :return: Path.
     """
-    upload_dir_path = get_import_dir_path()
-    return join_paths(upload_dir_path, dataset_name)
+    import_dir_path = get_import_dir_path()
+    return join_paths(import_dir_path, dataset_name)
 
 
 def get_uploaded_dataset_path(dataset_name: str) -> os.path:
@@ -173,8 +187,8 @@ def get_uploaded_dataset_path(dataset_name: str) -> os.path:
 
     :return: Path.
     """
-    temp_upload_dir_path = get_upload_dir_path()
-    return join_paths(temp_upload_dir_path, dataset_name)
+    upload_dir_path = get_upload_dir_path()
+    return join_paths(upload_dir_path, dataset_name)
 
 
 def delete_directory(path: os.path, try_hard=False) -> None:

@@ -1,7 +1,11 @@
+import csv
 import dash
 from dash import Output, Input, State
+import dash_bootstrap_components as dbc
 
-from src.utils import get_value, is_list_empty
+from src.defaults import EMPTY_LIST, EMPTY_STRING
+
+from src.utils import get_value, read_dataset, is_list_empty, list_has_one_item
 from src.front_end_operations import (
     is_trigger,
     hide_component,
@@ -10,7 +14,11 @@ from src.front_end_operations import (
 )
 from src.low_level_operations import (
     move,
+    rename,
     delete_file,
+    has_extension,
+    is_dataset_name,
+    get_import_dir_path,
     get_imported_dataset_path,
     get_uploaded_dataset_names,
     get_uploaded_dataset_path,
@@ -22,12 +30,12 @@ def set_callbacks(app) -> dash.Dash:
     @app.callback(
         [
             Output("dataset_checklist_div", "style"),
-            Output("no_imported_dataset_div", "style"),
+            Output("no_imported_dataset_div", "style")
         ],
         Input("imported_datasets_checklist", "options"),
         [
             State("dataset_checklist_div", "style"),
-            State("no_imported_dataset_div", "style"),
+            State("no_imported_dataset_div", "style")
         ]
     )
     def switch_dataset_listing_styles(
@@ -103,61 +111,150 @@ def set_callbacks(app) -> dash.Dash:
         """
         return not dataset_name_is_already_in_use(dataset_name)
 
+    def is_new_dataset_name_valid(current_names: list, name: str) -> bool or None:
+        """
+        Returns if the new name for a dataset is valid.
+
+        :param current_names: List with current names.
+        :param name: String with the new name.
+
+        :return: Bool.
+        """
+        if len(name.split(".")) == 2:
+            if is_dataset_name(name):
+
+                # If the name is not already in use for other datasets
+                return name not in current_names
+
+        return
+
     @app.callback(
         [
             Output("imported_datasets_checklist", "options"),
             Output("imported_datasets_checklist", "value"),
+            Output("rename_dataset_input", "value")
         ],
         [
             Input("dataset_uploader", "isCompleted"),
             Input("delete_dataset_button", "n_clicks"),
+            Input("rename_dataset_button", "n_clicks"),
         ],
         [
             State("imported_datasets_checklist", "options"),
-            State("dataset_uploader", "fileNames"),
             State("imported_datasets_checklist", "value"),
+            State("dataset_uploader", "fileNames"),
+            State("rename_dataset_input", "value")
         ]
     )
     def update_dataset_listing(
         new_upload,
         delete: int,
+        rename_dataset: int,
         available_options: list,
-        uploaded_file_name: list,
-        selected_datasets: list
+        selected_datasets: list,
+        uploaded_file_names: list,
+        new_dataset_name: str
     ) -> (list, list):
         """
         Updates imported datasets listing.
 
         :param new_upload: A new import has been performed.
         :param delete: Delete button has been clicked.
+        :param rename_dataset: Rename button has been clicked.
         :param available_options: List with current checklist options.
-        :param uploaded_file_name: List containing the name of the imported dataset.
+        :param uploaded_file_names: List containing the name of the imported dataset.
         :param selected_datasets: List with names of datasets selected by the user.
+        :param new_dataset_name: String with a new name for a dataset.
 
         :return: List with updated checklist options, and empty list.
         """
         # If a dataset has been uploaded
         if is_trigger("dataset_uploader"):
+            if list_has_one_item(uploaded_file_names):
 
-            # Get dataset name and path
-            dataset_name = get_value(uploaded_file_name)
-            print("Dataset name is", dataset_name)
-            dataset_path = get_uploaded_dataset_path(dataset_name)
+                # Get dataset name and path
+                dataset_name = get_value(uploaded_file_names)
+                dataset_path = get_uploaded_dataset_path(dataset_name)
 
-            # If it can be imported, then move it from upload to import directory
-            if dataset_can_be_imported(dataset_name):
-                new_dataset_path = get_imported_dataset_path(dataset_name)
-                move(dataset_path, new_dataset_path)
+                # If it can be imported, then move it from upload to import directory
+                if dataset_can_be_imported(dataset_name):
+                    new_dataset_path = get_imported_dataset_path(dataset_name)
+                    move(dataset_path, new_dataset_path)
 
-            # If it cannot be imported, delete it
-            else:
-                delete_file(dataset_path)
+                # If it cannot be imported, delete it
+                else:
+                    delete_file(dataset_path)
 
         # If delete button has been clicked
         elif is_trigger("delete_dataset_button"):
+
+            # If there are selected datasets, delete them
             if not is_list_empty(selected_datasets):
                 delete_datasets(selected_datasets)
+
+        # If rename button has been used
+        elif is_trigger("rename_dataset_button"):
+
+            # If there is only one selected dataset and the new name is valid
+            if list_has_one_item(selected_datasets):
+                current_name = get_value(selected_datasets)
+                current_extension = current_name.split(".")[-1]
+
+                # If it has no extension, add it
+                if not has_extension(new_dataset_name):
+                    new_dataset_name += "." + current_extension
+
+                # Comparing extensions
+                new_extension = new_dataset_name.split(".")[-1]
+                if new_extension == current_extension:
+                    if is_new_dataset_name_valid(available_options, new_dataset_name):
+                        directory_path = get_import_dir_path()
+
+                        # Rename the selected dataset
+                        rename(directory_path, current_name, new_dataset_name)
+
+        # Getting current file names in the directory
         available_options = refresh_imported_dataset_listing()
-        return available_options, list()
+        return available_options, EMPTY_LIST, EMPTY_STRING
+
+    @app.callback(
+        [
+            Output("table_preview_modal", "is_open"),
+            Output("table_preview_modal_body", "children")
+        ],
+        [
+            Input("open_preview_table_button", "n_clicks"),
+            Input("close_preview_table_button", "n_clicks"),
+        ],
+        [
+            State("imported_datasets_checklist", "value"),
+            State("table_preview_modal", "is_open")
+        ]
+    )
+    def show_table_preview(
+            open_preview: int, close_preview: int, selected_datasets: list, modal_state
+    ) -> (bool, list):
+        """
+        Displays the table preview of the selected imported dataset.
+
+        :param open_preview: Open preview button has been clicked.
+        :param close_preview: Close preview button has been clicked.
+        :param selected_datasets: List with selected datasets.
+        :param modal_state: Current state of the modal.
+
+        :return: Style for the preview modal, as well as table content for its body.
+        """
+        if is_trigger("open_preview_table_button"):
+            if list_has_one_item(selected_datasets):
+                dataset_name = get_value(selected_datasets)
+                dataset_path = get_imported_dataset_path(dataset_name)
+                sniffer = csv.Sniffer()
+                sep = sniffer.sniff(dataset_path, delimiters=[";", ",", "|"])
+                dataset = read_dataset(dataset_path
+                table = dbc.Table.from_dataframe(, striped=True, bordered=True, hover=True))
+                modal_state = True
+        elif is_trigger("close_preview_table_button"):
+            modal_state = False
+
 
     return app

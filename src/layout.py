@@ -4,7 +4,7 @@ from dash import html
 import dash_uploader as du
 import dash_bootstrap_components as dbc
 
-from src.defaults import EMPTY_STRING, MAIN_COL_STYLE, CHECKLIST_DIV_STYLE
+from src.defaults import EMPTY_LIST, EMPTY_STRING, MAIN_COL_STYLE, CHECKLIST_DIV_STYLE
 
 
 def create_layout(app: dash.Dash) -> dash.Dash:
@@ -24,15 +24,15 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                         style={
                             "fontSize": "60px",
                             "fontFamily": "Argent Demi Bold Font",
-                            "color": "#ffd25d",
-                        },
+                            "color": "#ffd25d"
+                        }
                     ),
                     dbc.Row(
                         [
                             dbc.Col(
                                 [
                                     html.H1(
-                                        "Import",
+                                        "Import"
                                     ),
                                     html.Div(
                                         [
@@ -48,9 +48,9 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                 default_style={
                                                     "height": "100px",
                                                     "border": "0px black solid",
-                                                    "borderRadius": "20px",
-                                                },
-                                            ),
+                                                    "borderRadius": "20px"
+                                                }
+                                            )
                                         ],
                                         style={
                                             "width": "100%",
@@ -59,8 +59,8 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                             "marginBottom": "20px",
                                             "border": "3px black solid",
                                             "borderRadius": "20px",
-                                            "backgroundColor": "#fff",
-                                        },
+                                            "backgroundColor": "#fff"
+                                        }
                                     ),
                                     html.Div(
                                         [
@@ -79,34 +79,34 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                                     "border": "3px black solid",
                                                                     "borderRadius": "20px",
                                                                     "paddingLeft": "10px",
-                                                                    "paddingRight": "10px",
-                                                                },
-                                                            ),
-                                                        ],
+                                                                    "paddingRight": "10px"
+                                                                }
+                                                            )
+                                                        ]
                                                     ),
                                                     dbc.Col(
                                                         [
                                                             dbc.Button(
                                                                 "Rename",
-                                                                id="rename_button",
-                                                                color="secondary",
-                                                            ),
+                                                                id="rename_dataset_button",
+                                                                color="secondary"
+                                                            )
                                                         ],
                                                         width=3,
                                                         style={
                                                             "textAlign": "right"
-                                                        },
-                                                    ),
+                                                        }
+                                                    )
                                                 ],
-                                                justify="between",
-                                            ),
+                                                justify="between"
+                                            )
                                         ],
-                                        id="rename_file_div",
+                                        id="rename_dataset_div",
                                         style={
                                             "width": "100%",
                                             "marginBottom": "20px",
-                                            "height": "40px",
-                                        },
+                                            "height": "40px"
+                                        }
                                     ),
                                     dbc.Row(
                                         [
@@ -114,7 +114,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                 [
                                                     html.H3("Uploaded datasets")
                                                 ],
-                                                width=9,
+                                                width=9
                                             ),
                                             dbc.Col(
                                                 [
@@ -123,29 +123,29 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                             dbc.Button(
                                                                 "Delete",
                                                                 id="delete_dataset_button",
-                                                                color="danger",
-                                                            ),
+                                                                color="danger"
+                                                            )
                                                         ],
                                                         id="delete_dataset_div",
                                                         style={
-                                                            "textAlign": "right",
-                                                        },
-                                                    ),
+                                                            "textAlign": "right"
+                                                        }
+                                                    )
                                                 ],
-                                                width=3,
-                                            ),
+                                                width=3
+                                            )
                                         ],
-                                        justify="between",
+                                        justify="between"
                                     ),
                                     html.Div(
                                         [
                                             dcc.Checklist(
                                                 id="imported_datasets_checklist",
-                                                options=list(),
-                                                value=list(),
+                                                options=EMPTY_LIST,
+                                                value=EMPTY_LIST,
                                                 labelStyle={"display": "block"},
-                                                inputStyle={"marginRight": "15px"},
-                                            ),
+                                                inputStyle={"marginRight": "15px"}
+                                            )
                                         ],
                                         id="dataset_checklist_div",
                                         style=CHECKLIST_DIV_STYLE
@@ -167,60 +167,74 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                             "borderRadius": "20px",
                                             "overflow": "scroll",
                                             "textAlign": "center",
-                                            "display": "none",
+                                            "display": "none"
                                         }
                                     ),
                                     html.Div(
                                         [
                                             dbc.Button(
                                                 "Preview table",
-                                                id="preview_table_button",
-                                                color="secondary",
-                                            ),
+                                                id="open_preview_table_button",
+                                                color="secondary"
+                                            )
                                         ],
-                                        style={"textAlign": "center"},
-                                    ),
+                                        style={"textAlign": "center"}
+                                    )
                                 ],
-                                style=MAIN_COL_STYLE,
+                                style=MAIN_COL_STYLE
                             ),
                             dbc.Col(
                                 [
                                     html.H1(
-                                        "Define",
+                                        "Define"
                                     ),
                                     html.Div(
                                         [
                                             dcc.Checklist(
-                                                options=list(),
-                                                value=list(),
+                                                options=EMPTY_LIST,
+                                                value=EMPTY_LIST,
                                                 labelStyle={"display": "block"},
-                                                inputStyle={"marginRight": "15px"},
-                                            ),
+                                                inputStyle={"marginRight": "15px"}
+                                            )
                                         ],
-                                        style=CHECKLIST_DIV_STYLE,
-                                    ),
+                                        style=CHECKLIST_DIV_STYLE
+                                    )
                                 ],
-                                style=MAIN_COL_STYLE,
+                                style=MAIN_COL_STYLE
                             ),
                             dbc.Col(
                                 [
                                     html.H1(
-                                        "Validate",
-                                    ),
+                                        "Validate"
+                                    )
                                 ],
-                                style=MAIN_COL_STYLE,
-                            ),
+                                style=MAIN_COL_STYLE
+                            )
                         ],
                         justify="evenly"
-                    ),
-                ],
+                    )
+                ]
             ),
+
+            # Modals
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(dbc.ModalTitle("Header")),
+                    dbc.ModalBody(id="preview_table_modal_body"),
+                    dbc.ModalFooter(
+                        dbc.Button(
+                            "Close", id="close", className="ms-auto", n_clicks=0
+                        )
+                    )
+                ],
+                id="preview_table_modal",
+            )
         ],
         style={
             "padding": "30px",
             "paddingTop": "15px",
             "width": "100%",
             "height": "100%"
-        },
+        }
     )
     return app
