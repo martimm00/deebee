@@ -172,10 +172,39 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     ),
                                     html.Div(
                                         [
-                                            dbc.Button(
-                                                "Preview table",
-                                                id="open_preview_table_button",
-                                                color="secondary"
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Button(
+                                                                "Preview table",
+                                                                id="open_preview_table_button",
+                                                                color="secondary"
+                                                            )
+                                                        ]
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Button(
+                                                                "Insights",
+                                                                id="open_insights_button",
+                                                                color="secondary"
+                                                            )
+                                                        ]
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Button(
+                                                                "Clear insights",
+                                                                id="clear_insights_button",
+                                                                color="danger"
+                                                            )
+                                                        ],
+                                                        id="clear_insights_div",
+                                                        style={"display": "none"}
+                                                    )
+                                                ],
+                                                justify="between"
                                             )
                                         ],
                                         style={"textAlign": "center"}
@@ -222,16 +251,27 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                     dbc.ModalHeader(
                         dbc.ModalTitle(id="preview_table_modal_header_title")
                     ),
-                    dbc.ModalBody(id="preview_table_modal_body"),
-                    # dbc.ModalFooter(
-                    #     dbc.Button(
-                    #         "Close", id="close_preview_table_button", className="ms-auto", n_clicks=0
-                    #     )
-                    # )
+                    dbc.ModalBody(
+                        [
+                            html.Div(
+                                id="preview_table_modal_body",
+                                style={
+                                    "width": "1500px"
+                                }
+                            )
+                        ],
+                        style={
+                            "overflow": "scroll"
+                        }
+                    )
                 ],
                 id="preview_table_modal",
-                style={"width": "150%"}
-            )
+                autofocus=True,
+                centered=True,
+                fullscreen=True,
+            ),
+            # Auxiliary Divs
+            html.Div(id="profile_report_output_div", style={"display": "none"})
         ],
         style={
             "padding": "30px",

@@ -3,6 +3,7 @@ import shutil
 
 from src.defaults import (
     LOCAL_SITE,
+    PROFILE_REPORTS_PATH,
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
     EXPECTATION_SUITE_DIR,
@@ -110,6 +111,17 @@ def is_csv_file_by_name(name: str) -> bool:
     return any([ends_in("." + ending, name) for ending in ["csv", "CSV"]])
 
 
+def is_excel_file_by_name(name: str) -> bool:
+    """
+    Returns whether the name belongs to a potential Excel (XLSX) file or not.
+
+    :param name: String to be checked.
+
+    :return: Bool.
+    """
+    return any([ends_in("." + ending, name) for ending in ["xlsx", "XLSX"]])
+
+
 def get_uploaded_dataset_names() -> list:
     """
     Returns the names of all uploaded datasets from the upload path.
@@ -159,6 +171,15 @@ def get_upload_dir_path() -> os.path:
     return UPLOAD_DIRECTORY_PATH
 
 
+def get_profile_reports_path() -> os.path:
+    """
+    Returns the path where profile reports are allocated.
+
+    :return: Path.
+    """
+    return PROFILE_REPORTS_PATH
+
+
 def get_expectation_dir() -> os.path:
     """
     Returns the directory that contains all Expectation Suites.
@@ -200,6 +221,56 @@ def get_uploaded_dataset_path(dataset_name: str) -> os.path:
     """
     upload_dir_path = get_upload_dir_path()
     return join_paths(upload_dir_path, dataset_name)
+
+
+def get_profile_report_title_from_dataset_name(dataset_name: str) -> str:
+    """
+    Returns the title of the profile report of a dataset, given the dataset name.
+
+    :param dataset_name: The name of the dataset.
+
+    :return: String with the title of the profile report for that dataset.
+    """
+    return dataset_name.replace(".", "_") + "_pr"
+
+
+def get_profile_report_name_from_dataset_name(dataset_name: str) -> str:
+    """
+    Returns the name of the profile report file of a dataset, given the dataset name.
+
+    :param dataset_name: The name of the dataset.
+
+    :return: String with the name of the profile report file for that dataset.
+    """
+    title = get_profile_report_title_from_dataset_name(dataset_name)
+    return title + ".html"
+
+
+def get_profile_report_path(dataset_name: str) -> os.path:
+    """
+    Returns the path of the profile report of a dataset, given a dataset name.
+
+    :param dataset_name: The name of the dataset.
+
+    :return: String with the name of the
+    """
+    profile_reports_path = get_profile_reports_path()
+    profile_report_file_name = get_profile_report_name_from_dataset_name(dataset_name)
+    return join_paths(profile_reports_path, profile_report_file_name)
+
+
+def is_profile_report_available(dataset_name: str) -> bool:
+    """
+    Returns if a profile report of the selected dataset has already been created or not.
+
+    :param dataset_name: String with the name of the dataset to be checked.
+
+    :return: Bool.
+    """
+    profile_reports_path = get_profile_reports_path()
+    elements_in_directory = get_elements_inside_directory(profile_reports_path)
+    profile_report_file_name = get_profile_report_name_from_dataset_name(dataset_name)
+    return profile_report_file_name in elements_in_directory
 
 
 def delete_directory(path: os.path, try_hard=False) -> None:

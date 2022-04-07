@@ -1,27 +1,39 @@
-import csv
 import dash
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
 
 from src.defaults import EMPTY_LIST, EMPTY_STRING
 
-from src.utils import get_value, read_dataset, is_list_empty, list_has_one_item, infer_csv_separator
+from src.utils import (
+    get_value,
+    read_dataset,
+    is_list_empty,
+    list_has_one_item,
+    infer_csv_separator,
+    build_profile_report
+)
 from src.front_end_operations import (
     is_trigger,
     hide_component,
     display_component,
+    open_file_in_browser,
     get_checklist_components,
 )
 from src.low_level_operations import (
     move,
     rename,
+    join_paths,
     delete_file,
     has_extension,
     is_dataset_name,
+    is_csv_file_by_name,
     get_import_dir_path,
+    get_profile_report_path,
     get_imported_dataset_path,
-    get_uploaded_dataset_names,
     get_uploaded_dataset_path,
+    get_uploaded_dataset_names,
+    is_profile_report_available,
+    get_profile_report_title_from_dataset_name
 )
 
 
@@ -225,10 +237,7 @@ def set_callbacks(app) -> dash.Dash:
             Output("preview_table_modal_body", "children"),
             Output("preview_table_modal_header_title", "children")
         ],
-        [
-            Input("open_preview_table_button", "n_clicks"),
-            # Input("close_preview_table_button", "n_clicks"),
-        ],
+        Input("open_preview_table_button", "n_clicks"),
         [
             State("imported_datasets_checklist", "value"),
             State("preview_table_modal", "is_open")
@@ -254,12 +263,29 @@ def set_callbacks(app) -> dash.Dash:
                 dataset_name = get_value(selected_datasets)
                 dataset_path = get_imported_dataset_path(dataset_name)
                 separator = infer_csv_separator(dataset_path)
-                dataset = read_dataset(dataset_path, sep=separator, n_rows=10)
-                body_content = dbc.Table.from_dataframe(dataset, striped=True, bordered=True, hover=True)
+                dataset = read_dataset(dataset_path, sep=separator, n_rows=20)
+                body_content = dbc.Table.from_dataframe(
+                    dataset, striped=True, bordered=True, hover=True
+                )
                 modal_state = True
                 modal_title = f"{dataset_name} preview"
-        # elif is_trigger("close_preview_table_button"):
-        #     modal_state = False
         return modal_state, body_content, modal_title
+
+    @app.callback(
+        Output("profile_report_output_div", "children"),
+        Input("open_insights_button", "n_clicks"),
+        State("imported_datasets_checklist", "value"),
+    )
+    def see_dataset_insights(open_insights: int, selected_datasets: list) -> None:
+        if is_trigger("open_insights_button"):
+            if list_has_one_item(selected_datasets):
+                dataset_name = get_value(selected_datasets)
+                if not is_profile_report_available(dataset_name):
+                    build_profile_report(dataset_name)
+                file_path = get_profile_report_path(dataset_name)
+                print("opening file in browser...")
+                open_file_in_browser(file_path)
+
+        return
 
     return app

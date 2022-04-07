@@ -2,6 +2,8 @@ import os
 import dash
 import webbrowser
 
+from src.low_level_operations import join_paths
+
 
 def open_in_browser(url: os.path) -> None:
     """
@@ -10,6 +12,17 @@ def open_in_browser(url: os.path) -> None:
     :param url: Path with a URL to a local HTML file.
     """
     webbrowser.open(url)
+
+
+def open_file_in_browser(path: os.path) -> None:
+    """
+    Opens an HTML file in a new browser tab given its path.
+
+    :param path: Path where the file is allocated.
+    """
+    path_to_open = join_paths("file:" + os.path.sep * 2, os.path.realpath(path))
+    print(path_to_open)
+    open_in_browser(path_to_open)
 
 
 def get_callback_context() -> dash._callback_context.CallbackContext:
