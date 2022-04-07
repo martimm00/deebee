@@ -20,7 +20,8 @@ def open_file_in_browser(path: os.path) -> None:
 
     :param path: Path where the file is allocated.
     """
-    path_to_open = join_paths("file:" + os.path.sep * 2, os.path.realpath(path))
+    real_path = os.path.realpath(path)
+    path_to_open = "file:" + os.path.sep * 2 + real_path
     print(path_to_open)
     open_in_browser(path_to_open)
 

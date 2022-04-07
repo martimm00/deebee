@@ -1,3 +1,4 @@
+import os
 import dash
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
@@ -22,18 +23,15 @@ from src.front_end_operations import (
 from src.low_level_operations import (
     move,
     rename,
-    join_paths,
     delete_file,
     has_extension,
     is_dataset_name,
-    is_csv_file_by_name,
     get_import_dir_path,
     get_profile_report_path,
     get_imported_dataset_path,
     get_uploaded_dataset_path,
     get_uploaded_dataset_names,
     is_profile_report_available,
-    get_profile_report_title_from_dataset_name
 )
 
 
@@ -283,7 +281,6 @@ def set_callbacks(app) -> dash.Dash:
                 if not is_profile_report_available(dataset_name):
                     build_profile_report(dataset_name)
                 file_path = get_profile_report_path(dataset_name)
-                print("opening file in browser...")
                 open_file_in_browser(file_path)
 
         return
