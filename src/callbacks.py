@@ -27,11 +27,14 @@ from src.low_level_operations import (
     has_extension,
     is_dataset_name,
     get_import_dir_path,
+    is_profile_report_name,
     get_profile_report_path,
+    get_profile_reports_path,
     get_imported_dataset_path,
     get_uploaded_dataset_path,
     get_uploaded_dataset_names,
     is_profile_report_available,
+    get_elements_inside_directory,
 )
 
 
@@ -284,5 +287,29 @@ def set_callbacks(app) -> dash.Dash:
                 open_file_in_browser(file_path)
 
         return
+
+    @app.callback(
+        Output("clear_insights_div", "style"),
+        Input("profile_report_output_div", "children"),
+        State("clear_insights_div", "style")
+    )
+    def display_or_hide_clear_profile_reports_components(
+        change: list or None, current_style: dict
+    ) -> dict:
+        profile_reports_dir = get_profile_reports_path()
+        profile_reports = [
+            pr
+            for pr in get_elements_inside_directory(profile_reports_dir)
+            if is_profile_report_name(pr)
+        ]
+
+        # If there are no profile reports, hide the components
+        if is_list_empty(profile_reports):
+            style = hide_component(current_style)
+
+        # If there are, then display them
+        else:
+            style = display_component(current_style)
+        return style
 
     return app

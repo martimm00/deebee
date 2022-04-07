@@ -2,8 +2,6 @@ import os
 import dash
 import webbrowser
 
-from src.low_level_operations import join_paths
-
 
 def open_in_browser(url: os.path) -> None:
     """
@@ -22,7 +20,6 @@ def open_file_in_browser(path: os.path) -> None:
     """
     real_path = os.path.realpath(path)
     path_to_open = "file:" + os.path.sep * 2 + real_path
-    print(path_to_open)
     open_in_browser(path_to_open)
 
 

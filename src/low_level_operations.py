@@ -100,6 +100,17 @@ def is_dataset_name(name: str) -> bool:
     return any([ends_in("." + ending, name) for ending in SUPPORTED_DATASET_TYPES])
 
 
+def is_profile_report_name(name: str) -> bool:
+    """
+    Returns whether the name belongs to a potential profile report or not.
+
+    :param name: String to be checked.
+
+    :return: Bool.
+    """
+    return ends_in(".html", name)
+
+
 def is_csv_file_by_name(name: str) -> bool:
     """
     Returns whether the name belongs to a potential CSV file or not.
