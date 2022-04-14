@@ -1,5 +1,6 @@
 import os
 import logging
+import warnings
 
 from src.defaults import LOCALHOST, DATA_DIRECTORY
 from src.app import create_app
@@ -69,6 +70,13 @@ def configure_logging() -> None:
     log.setLevel(logging.ERROR)
 
 
+def configure_warnings() -> None:
+    """
+    Configures console warnings so that they are not displayed.
+    """
+    warnings.filterwarnings("ignore")
+
+
 def display_welcome_message() -> None:
     """
     Shows welcome message when launching the app.
@@ -99,8 +107,9 @@ def main():
     # Defining app
     app = create_app(upload_dir_path=data_path)
 
-    # Removing all logs except errors
+    # Removing all logs and warnings
     configure_logging()
+    configure_warnings()
 
     # Welcome message
     display_welcome_message()

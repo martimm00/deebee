@@ -23,6 +23,7 @@ from src.front_end_operations import (
 from src.low_level_operations import (
     move,
     rename,
+    join_paths,
     delete_file,
     has_extension,
     is_dataset_name,
@@ -290,11 +291,14 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         Output("clear_insights_div", "style"),
-        Input("profile_report_output_div", "children"),
+        [
+            Input("clear_insights_button", "n_clicks"),
+            Input("profile_report_output_div", "children"),
+        ],
         State("clear_insights_div", "style")
     )
-    def display_or_hide_clear_profile_reports_components(
-        change: list or None, current_style: dict
+    def clear_profile_reports_or_toggle_components(
+        change: list or None, clear_profile_reports: int, current_style: dict
     ) -> dict:
         profile_reports_dir = get_profile_reports_path()
         profile_reports = [
@@ -303,13 +307,22 @@ def set_callbacks(app) -> dash.Dash:
             if is_profile_report_name(pr)
         ]
 
-        # If there are no profile reports, hide the components
-        if is_list_empty(profile_reports):
+        # If all profile reports have to be deleted
+        if is_trigger("clear_insights_button"):
+            for pr in profile_reports:
+                pr_path = join_paths(profile_reports_dir, pr)
+                delete_file(pr_path)
             style = hide_component(current_style)
 
-        # If there are, then display them
         else:
-            style = display_component(current_style)
+
+            # If there are no profile reports, hide the components
+            if is_list_empty(profile_reports):
+                style = hide_component(current_style)
+
+            # If there are, then display them
+            else:
+                style = display_component(current_style)
         return style
 
     return app

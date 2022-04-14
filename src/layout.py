@@ -195,7 +195,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                     dbc.Col(
                                                         [
                                                             dbc.Button(
-                                                                "Clear insights",
+                                                                "Clear all insights",
                                                                 id="clear_insights_button",
                                                                 color="danger"
                                                             )
