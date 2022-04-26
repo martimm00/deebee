@@ -5,6 +5,12 @@ import warnings
 from src.app import create_app
 from src.great_expectations_init import initialize
 from src.front_end_operations import open_in_browser
+from src.low_level_operations import (
+    move,
+    make_dir,
+    exists_path,
+    system_call,
+)
 from src.defaults import (
     LOCALHOST,
     DATA_DIRECTORY,
@@ -12,12 +18,6 @@ from src.defaults import (
     GREAT_EXPECTATIONS_PATH,
     EXPECTATION_SUITES_PATH,
     VALIDATION_RESULTS_PATH,
-)
-from src.low_level_operations import (
-    move,
-    make_dir,
-    exists_path,
-    system_call,
 )
 
 

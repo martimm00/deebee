@@ -12,8 +12,8 @@ EMPTY_LIST = list()
 HIDE_COMPONENT = {"display": "none"}
 GREAT_EXPECTATIONS_DIR = r"great_expectations"
 GREAT_EXPECTATIONS_PATH = os.path.join(DATA_DIRECTORY, GREAT_EXPECTATIONS_DIR)
-EXPECTATION_SUITES_PATH = r"../expectation_suites"
-VALIDATION_RESULTS_PATH = r"../validation_results"
+EXPECTATION_SUITES_PATH = r"expectation_suites"
+VALIDATION_RESULTS_PATH = r"validation_results"
 LOCAL_SITE = os.path.join(
     *[
         DATA_DIRECTORY,

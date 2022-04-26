@@ -7,9 +7,13 @@ from great_expectations.data_context import DataContext
 from great_expectations.cli.pretty_printing import cli_message
 from great_expectations.exceptions import DataContextError, DatasourceInitializationError
 
-
-from src.defaults import IMPORT_DIRECTORY_PATH, EXPECTATION_SUITES_PATH, VALIDATION_RESULTS_PATH
 from src.low_level_operations import make_dir, exists_path, join_paths, get_absolute_path
+from src.defaults import (
+    IMPORT_DIRECTORY_PATH,
+    GREAT_EXPECTATIONS_DIR,
+    EXPECTATION_SUITES_PATH,
+    VALIDATION_RESULTS_PATH,
+)
 
 
 def get_full_path_to_ge_dir(target_directory: os.path) -> os.path:
@@ -79,7 +83,7 @@ def change_storage_paths(target_directory: os.path) -> None:
     :param target_directory: Path to the target directory.
     """
     path_to_yaml = os.path.join(
-        *[target_directory, "great_expectations", "great_expectations.yml"]
+        *[target_directory, GREAT_EXPECTATIONS_DIR, "great_expectations.yml"]
     )
 
     # Opening and reading the YML file
@@ -89,10 +93,10 @@ def change_storage_paths(target_directory: os.path) -> None:
     # Changing paths
     yaml["stores"]["expectations_store"]["store_backend"][
         "base_directory"
-    ] = r"../expectation_suites"
+    ] = EXPECTATION_SUITES_PATH
     yaml["stores"]["validations_store"]["store_backend"][
         "base_directory"
-    ] = r"../validation_results"
+    ] = VALIDATION_RESULTS_PATH
 
     # Writing back the updated YML to a file
     with open(path_to_yaml, "w") as stream:

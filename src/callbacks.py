@@ -4,6 +4,13 @@ import dash_bootstrap_components as dbc
 
 from src.defaults import EMPTY_LIST, EMPTY_STRING
 
+from src.front_end_operations import (
+    is_trigger,
+    hide_component,
+    display_component,
+    open_file_in_browser,
+    get_checklist_components,
+)
 from src.utils import (
     get_value,
     read_dataset,
@@ -11,13 +18,6 @@ from src.utils import (
     list_has_one_item,
     infer_csv_separator,
     build_profile_report
-)
-from src.front_end_operations import (
-    is_trigger,
-    hide_component,
-    display_component,
-    open_file_in_browser,
-    get_checklist_components,
 )
 from src.low_level_operations import (
     move,
@@ -251,7 +251,6 @@ def set_callbacks(app) -> dash.Dash:
         Displays the table preview of the selected imported dataset.
 
         :param open_preview: Open preview button has been clicked.
-        :param close_preview: Close preview button has been clicked.
         :param selected_datasets: List with selected datasets.
         :param modal_state: Current state of the modal.
 
