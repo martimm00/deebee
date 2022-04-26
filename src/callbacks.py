@@ -1,4 +1,3 @@
-import os
 import dash
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
@@ -276,7 +275,7 @@ def set_callbacks(app) -> dash.Dash:
     @app.callback(
         Output("profile_report_output_div", "children"),
         Input("open_insights_button", "n_clicks"),
-        State("imported_datasets_checklist", "value"),
+        State("imported_datasets_checklist", "value")
     )
     def see_dataset_insights(open_insights: int, selected_datasets: list) -> None:
         if is_trigger("open_insights_button"):

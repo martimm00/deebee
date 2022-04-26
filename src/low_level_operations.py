@@ -6,7 +6,7 @@ from src.defaults import (
     PROFILE_REPORTS_PATH,
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
-    EXPECTATION_SUITE_DIR,
+    EXPECTATION_SUITES_PATH,
     SUPPORTED_DATASET_TYPES,
 )
 
@@ -191,18 +191,18 @@ def get_profile_reports_path() -> os.path:
     return PROFILE_REPORTS_PATH
 
 
-def get_expectation_dir() -> os.path:
+def get_expectations_path() -> os.path:
     """
     Returns the directory that contains all Expectation Suites.
 
     :return: Path.
     """
-    return EXPECTATION_SUITE_DIR
+    return EXPECTATION_SUITES_PATH
 
 
-def get_validation_dir() -> os.path:
+def get_validations_path() -> os.path:
     """
-    Returns Great Expectations validation path. Used to look for Great Expectations docs
+    Returns Great Expectations' validation path. Used to look for Great Expectations docs
     HTML files.
 
     :return: Path.

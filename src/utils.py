@@ -138,7 +138,11 @@ def build_profile_report(dataset_name: str) -> None:
     dataset_name = dataset_name.replace(".", "_")
     title = get_profile_report_title_from_dataset_name(dataset_name)
     file_path = get_profile_report_path(dataset_name)
+    print(file_path)
 
     # Building the profile report itself and saving it to a file
     report = ProfileReport(dataframe, title=title)
-    report.to_file(file_path)
+    try:
+        report.to_file(file_path)
+    except ValueError:
+        pass
