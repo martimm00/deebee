@@ -11,9 +11,10 @@ from src.low_level_operations import (
     exists_path,
     system_call,
 )
-from src.defaults import (
+from constants.path_constants import (
     LOCALHOST,
     DATA_DIRECTORY,
+    IMPORT_DIRECTORY_PATH,
     GREAT_EXPECTATIONS_DIR,
     GREAT_EXPECTATIONS_PATH,
     EXPECTATION_SUITES_PATH,
@@ -21,25 +22,27 @@ from src.defaults import (
 )
 
 
-def make_sure_dirs_exist(
-        data_path: os.path, expectation_directory: os.path, validation_directory: os.path
-) -> None:
+def make_sure_dirs_exist() -> None:
     """
     Can create the three directories in case they do not exist.
-
-    :param data_path: The main app path.
-    :param expectation_directory: Path where Expectation Suites are saved.
-    :param validation_directory: Path where validation results are saved.
     """
+    data_path = DATA_DIRECTORY
+    expectations_path = EXPECTATION_SUITES_PATH
+    validations_path = VALIDATION_RESULTS_PATH
+    imports_path = IMPORT_DIRECTORY_PATH
+
     # If the path does not exist, create it
     if not exists_path(data_path):
         make_dir(data_path)
 
     # If expectation directory does not exist, then create expectation and validation
     # directories
-    if not exists_path(expectation_directory):
-        make_dir(expectation_directory)
-        make_dir(validation_directory)
+    if not exists_path(expectations_path):
+        make_dir(expectations_path)
+    if not exists_path(validations_path):
+        make_dir(validations_path)
+    if not exists_path(imports_path):
+        make_dir(imports_path)
 
 
 def repair_ge_file_system(path: os.path) -> None:
@@ -98,11 +101,9 @@ def main():
 
     # Getting path to all directories
     data_path = DATA_DIRECTORY
-    expectations_dir = EXPECTATION_SUITES_PATH
-    validations_dir = VALIDATION_RESULTS_PATH
 
     # Creating environment directories
-    make_sure_dirs_exist(data_path, expectations_dir, validations_dir)
+    make_sure_dirs_exist()
 
     # Initializing Great Expectations
     initialize_ge()

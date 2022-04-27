@@ -2,7 +2,7 @@ import dash
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
 
-from src.defaults import EMPTY_LIST, EMPTY_STRING
+from constants.defaults import EMPTY_LIST, EMPTY_STRING
 
 from src.front_end_operations import (
     is_trigger,
@@ -147,7 +147,8 @@ def set_callbacks(app) -> dash.Dash:
         [
             Output("imported_datasets_checklist", "options"),
             Output("imported_datasets_checklist", "value"),
-            Output("rename_dataset_input", "value")
+            Output("rename_dataset_input", "value"),
+            Output("imported_datasets_store", "data")
         ],
         [
             Input("dataset_uploader", "isCompleted"),
@@ -158,7 +159,8 @@ def set_callbacks(app) -> dash.Dash:
             State("imported_datasets_checklist", "options"),
             State("imported_datasets_checklist", "value"),
             State("dataset_uploader", "fileNames"),
-            State("rename_dataset_input", "value")
+            State("rename_dataset_input", "value"),
+            State("imported_datasets_store", "data")
         ]
     )
     def update_dataset_listing(
@@ -168,7 +170,8 @@ def set_callbacks(app) -> dash.Dash:
         available_options: list,
         selected_datasets: list,
         uploaded_file_names: list,
-        new_dataset_name: str
+        new_dataset_name: str,
+        imported_datasets: dict
     ) -> (list, list):
         """
         Updates imported datasets listing.
@@ -180,6 +183,7 @@ def set_callbacks(app) -> dash.Dash:
         :param uploaded_file_names: List containing the name of the imported dataset.
         :param selected_datasets: List with names of datasets selected by the user.
         :param new_dataset_name: String with a new name for a dataset.
+        :param imported_datasets: Dictionary with objects of currently imported datasets.
 
         :return: List with updated checklist options, and empty list.
         """
@@ -195,6 +199,7 @@ def set_callbacks(app) -> dash.Dash:
                 if dataset_can_be_imported(dataset_name):
                     new_dataset_path = get_imported_dataset_path(dataset_name)
                     move(dataset_path, new_dataset_path)
+                    imported_datasets[dataset_name] = Table(dataset_name, dataset_path)
 
                 # If it cannot be imported, delete it
                 else:
@@ -206,6 +211,8 @@ def set_callbacks(app) -> dash.Dash:
             # If there are selected datasets, delete them
             if not is_list_empty(selected_datasets):
                 delete_datasets(selected_datasets)
+                for dataset_name in selected_datasets:
+                    del imported_datasets[dataset_name]
 
         # If rename button has been used
         elif is_trigger("rename_dataset_button"):
@@ -227,10 +234,13 @@ def set_callbacks(app) -> dash.Dash:
 
                         # Rename the selected dataset
                         rename(directory_path, current_name, new_dataset_name)
+                        imported_datasets[new_dataset_name] = imported_datasets.pop(current_name)
+                        imported_datasets[new_dataset_name].name = new_dataset_name
+
 
         # Getting current file names in the directory
         available_options = refresh_imported_dataset_listing()
-        return available_options, EMPTY_LIST, EMPTY_STRING
+        return available_options, EMPTY_LIST, EMPTY_STRING, imported_datasets
 
     @app.callback(
         [

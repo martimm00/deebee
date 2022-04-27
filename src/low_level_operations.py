@@ -1,13 +1,13 @@
 import os
 import shutil
 
-from src.defaults import (
+from constants.supported_constants import SUPPORTED_DATASET_TYPES
+from constants.path_constants import (
     LOCAL_SITE,
     PROFILE_REPORTS_PATH,
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
     EXPECTATION_SUITES_PATH,
-    SUPPORTED_DATASET_TYPES,
 )
 
 

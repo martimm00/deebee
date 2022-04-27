@@ -8,7 +8,7 @@ from great_expectations.cli.pretty_printing import cli_message
 from great_expectations.exceptions import DataContextError, DatasourceInitializationError
 
 from src.low_level_operations import make_dir, exists_path, join_paths, get_absolute_path
-from src.defaults import (
+from constants.path_constants import (
     IMPORT_DIRECTORY_PATH,
     GREAT_EXPECTATIONS_DIR,
     EXPECTATION_SUITES_PATH,

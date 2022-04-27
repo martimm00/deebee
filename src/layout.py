@@ -4,7 +4,8 @@ from dash import html
 import dash_uploader as du
 import dash_bootstrap_components as dbc
 
-from src.defaults import EMPTY_LIST, EMPTY_STRING, MAIN_COL_STYLE, CHECKLIST_DIV_STYLE
+from constants.defaults import EMPTY_LIST, EMPTY_STRING
+from constants.layout_shortcut_constants import MAIN_COL_STYLE, CHECKLIST_DIV_STYLE
 
 
 def create_layout(app: dash.Dash) -> dash.Dash:
@@ -270,8 +271,12 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                 centered=True,
                 fullscreen=True,
             ),
+
             # Auxiliary Divs
-            html.Div(id="profile_report_output_div", style={"display": "none"})
+            html.Div(id="profile_report_output_div", style={"display": "none"}),
+
+            # Stores
+            dcc.Store("imported_datasets_store")
         ],
         style={
             "padding": "30px",
