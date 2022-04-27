@@ -2,12 +2,14 @@ import os
 import pandas as pd
 from great_expectations.checkpoint import LegacyCheckpoint
 
-from constants import path_constants
+from constants.defaults import EMPTY_STRING
+from constants.great_expectations_constants import OUTDATED
+from constants.path_constants import EXPECTATION_SUITES_PATH
+
 from src.json_operations import from_json
 from src.objects import ExpectationSuiteName
-from src.dataset_operations import load_dataset
 from src.json_operations import read_json, to_json
-from src.data_structure_operations import is_empty, get_value, split
+from src.utils import get_value, read_dataset, is_list_empty
 from src.front_end_operations import get_list_group_item_elements, build_list_group_item
 from src.expectation_parameters import (
     requires_parameters,
@@ -28,14 +30,14 @@ from src.batch_operations import (
     get_batch_expectation_functions,
 )
 from src.low_level_operations import (
-    remove_file,
+    delete_file,
     write_file,
     get_file_name,
-    get_validations_folder,
+    get_validations_path,
     get_directory_path,
     get_directory_name,
     join_paths,
-    remove_folder,
+    delete_directory,
     change_extension,
     get_expectation_suite_folder,
     get_great_expectations_validations_folder,
@@ -81,7 +83,7 @@ def remove_tmp_validation_file(exporting: str) -> None:
     if exporting != "true":
         path = from_json(exporting)
         if path:
-            remove_file(path)
+            delete_file(path)
 
 
 def build_tmp_validation_file(file_path: os.path) -> os.path:
@@ -115,7 +117,7 @@ def build_tmp_validation_file_path_from_result(
         validation_result
     )
     tmp_file_name = build_tmp_validation_file_name(expectation_suite_name, dataset_name)
-    tmp_file_path = join_paths([get_directory_path(file_path), tmp_file_name])
+    tmp_file_path = join_paths(get_directory_path(file_path), tmp_file_name)
     return tmp_file_path
 
 
@@ -130,7 +132,7 @@ def get_elements_for_tmp_file_name(validation_result: dict) -> (str, str):
     """
     expectation_suite_name = get_validation_expectation_suite_name(validation_result)
     dataset_path = get_validated_dataset_path(validation_result)
-    dataset_name = split(get_file_name(dataset_path), ".")[0]
+    dataset_name = get_file_name(dataset_path).split(".")[0]
     return dataset_name, expectation_suite_name
 
 
@@ -171,10 +173,10 @@ def get_validation_result_json_path(validation_html: str) -> str:
     HTML validation result file.
     :return: String with the path to the validation result JSON file.
     """
-    validations_folder = get_validations_folder()
+    validations_folder = get_validations_path()
 
     # Getting validation result file to be exported
-    expectation_suite_folder = defaults.EXPECTATION_SUITE_NAME_DIR
+    expectation_suite_folder = EXPECTATION_SUITES_PATH  # EXPECTATION_SUITE_NAME_DIR
     expectation_suite_name = get_directory_name(
         get_directory_path(get_directory_path(get_directory_path(validation_html)))
     )
@@ -209,8 +211,8 @@ def build_path_to_validation_file(
     :param file_name: String with the path to this file.
     :return: String with path to validation file.
     """
-    return join_paths(
-        [
+    return os.path.join(
+        *[
             validations_folder,
             expectation_suite_folder,
             expectation_suite_name,
@@ -255,8 +257,8 @@ def remove_validation_file_and_docs(
     validation file.
     """
     try:
-        remove_folder(validation_html)
-        remove_folder(validation_json)
+        delete_directory(validation_html)
+        delete_directory(validation_json)
     except FileNotFoundError:
         pass
 
@@ -268,23 +270,20 @@ def look_for_empty_validation_directories(expectation_suite_name: str) -> None:
     :param expectation_suite_name: String with Expectation Suite
     name.
     """
-    validations_folder = get_validations_folder()
+    validations_folder = get_validations_path()
     expectation_suite_folder = get_expectation_suite_folder()
     validation_name_folder = join_paths(
-        [
-            validations_folder,
-            expectation_suite_folder,
-        ]
+        validations_folder, expectation_suite_folder
     )
     validation_extension_folder = join_paths(
-        [validation_name_folder, expectation_suite_name]
+        validation_name_folder, expectation_suite_name
     )
     validation_docs_folder = get_great_expectations_validations_folder()
     ge_validation_name_folder = join_paths(
-        [validation_docs_folder, expectation_suite_folder]
+        validation_docs_folder, expectation_suite_folder
     )
     ge_validation_extension_folder = join_paths(
-        [ge_validation_name_folder, expectation_suite_name]
+        ge_validation_name_folder, expectation_suite_name
     )
     remove_empty_validation_folders(
         ge_validation_extension_folder,
@@ -312,12 +311,12 @@ def remove_empty_validation_folders(
     validation folder.
     """
     try:
-        if is_empty(get_elements_inside_directory(validation_extension_folder)):
-            remove_folder(validation_extension_folder)
-            remove_folder(ge_validation_extension_folder)
-        if is_empty(get_elements_inside_directory(validation_name_folder)):
-            remove_folder(validation_name_folder)
-            remove_folder(ge_validation_name_folder)
+        if is_list_empty(get_elements_inside_directory(validation_extension_folder)):
+            delete_directory(validation_extension_folder)
+            delete_directory(ge_validation_extension_folder)
+        if is_list_empty(get_elements_inside_directory(validation_name_folder)):
+            delete_directory(validation_name_folder)
+            delete_directory(ge_validation_name_folder)
     except FileNotFoundError:
         pass
 
@@ -362,7 +361,7 @@ def get_validation_expectation_suite_name(validation_result: dict) -> str:
     :return: String that contains Expectation Suite name.
     """
     validation_metadata = get_validation_metadata(validation_result)
-    return split(validation_metadata["expectation_suite_name"], ".")[-1]
+    return validation_metadata["expectation_suite_name"].split(".")[-1]
 
 
 def get_validation_timestamp(validation_result: dict) -> str:
@@ -429,11 +428,11 @@ def append_different_extension_validations_loop(
 
     # For each expectation suite extension
     for expectation_suite_name in expectation_suites_names:
-        outdated = defaults.EMPTY_STRING
+        outdated = EMPTY_STRING
         if expectation_suite_name not in list_expectation_suites():
-            outdated = defaults.OUTDATED
+            outdated = OUTDATED
         expectation_suites_extensions_directory = join_paths(
-            [expectation_suite_folder_directory, expectation_suite_name]
+            expectation_suite_folder_directory, expectation_suite_name
         )
         validation_results_counter = append_different_dataset_validations_loop(
             children,
@@ -476,7 +475,7 @@ def append_different_dataset_validations_loop(
     # For each validated dataset
     for dataset in datasets_validations:
         tree_validation_path = join_paths(
-            [expectation_suites_extensions_directory, dataset]
+            expectation_suites_extensions_directory, dataset
         )
 
         # To finally get to the validation file
@@ -544,7 +543,7 @@ def apply_expectation_suite_to_dataset(
     expectation_and_columns = read_expectation_and_columns_from_expectation_suite(
         expectation_suite
     )
-    dataset = load_dataset(dataset_name, n_rows=5)
+    dataset = read_dataset(dataset_name, n_rows=5)
     error_message = check_dataset_compatibility(dataset, expectation_and_columns)
     if error_message:
         return True, error_message, to_json({})

@@ -2,6 +2,8 @@ import os
 import dash
 import webbrowser
 
+from constants.great_expectations_constants import EXPECTATION_INTERFACE_NAME_DIVIDER
+
 
 def open_in_browser(url: os.path) -> None:
     """
@@ -57,6 +59,11 @@ def get_checklist_component(item_name: str) -> dict:
 
 
 def get_checklist_components(item_names: list) -> list:
+    """
+    Returns checklist components given the name of some item.
+
+    :param item_names: List with item names.
+    """
     return [get_checklist_component(item_name) for item_name in item_names]
 
 
@@ -103,6 +110,31 @@ def display_component(current_style: dict) -> dict:
     return current_style
 
 
+def add_option_to_checklist(options: list, new_element: str) -> None:
+    """
+    This function can be used to add an option to a checklist, by
+    adding a checklist component to a list.
+    :param options: List of current options.
+    :param new_element: String with the new element to be added.
+    """
+    item = get_checklist_component(new_element)
+    if item not in options:
+        options.append(item)
+
+
+def add_options_to_checklist(options: list, new_elements: list) -> list:
+    """
+    This function can be used to add options to a checklist, by
+    adding checklist components to a list.
+    :param options: List of current options.
+    :param new_elements: List of new elements to add.
+    :return: List of updated options.
+    """
+    for element in new_elements:
+        add_option_to_checklist(options, element)
+    return options
+
+
 def hide_component(current_style: dict) -> dict:
     """
     Allows a component to be hidden in the interface.
@@ -113,3 +145,60 @@ def hide_component(current_style: dict) -> dict:
     """
     current_style["display"] = "none"
     return current_style
+
+
+def get_expectation_info_from_interface_name(
+    expectation_interface_name: str,
+) -> (str, str):
+    """
+    Returns some expectation information by splitting its interface name.
+
+    :param expectation_interface_name: String with the name.
+
+    :return: String with the name of the expectation, string with the name of the dataset
+    column where it has to be applied.
+    """
+    divider = EXPECTATION_INTERFACE_NAME_DIVIDER
+    expectation_name = get_expectation_name_from_interface_name(
+        expectation_interface_name, divider
+    )
+    expectation_column = get_expectation_column_from_interface_name(
+        expectation_interface_name, divider
+    )
+    return expectation_name, expectation_column
+
+
+def get_expectation_name_from_interface_name(
+    expectation_interface_name: str, divider: str
+) -> str:
+    """
+    Returns expectation name from complete expectation name.
+
+    :param expectation_interface_name: String with the interface expectation name.
+    :param divider: String that is in between the expectation name and the dataset column
+    where it has to be applied. This argument can be changed at any time in
+    defaults.py.
+
+    :return: String with the expectation name.
+    """
+    divider_beginning = expectation_interface_name.find(divider)
+    return expectation_interface_name[: divider_beginning - 1]
+
+
+def get_expectation_column_from_interface_name(
+    expectation_interface_name: str, divider: str
+) -> str:
+    """
+    Returns dataset column from complete expectation name.
+
+    :param expectation_interface_name: String with the interface expectation name.
+    :param divider: String that is in between the expectation name and the dataset column
+    where it has to be applied. This argument can be changed at any time in defaults.py.
+
+    :return: String with the dataset column.
+    """
+    divider_beginning = expectation_interface_name.find(divider)
+    divider_ending = divider_beginning + len(divider) + 1
+    expectation_column = expectation_interface_name[divider_ending:]
+    expectation_column = expectation_column.strip("'")
+    return expectation_column

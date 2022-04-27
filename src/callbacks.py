@@ -32,7 +32,7 @@ from src.low_level_operations import (
     get_profile_reports_path,
     get_imported_dataset_path,
     get_uploaded_dataset_path,
-    get_uploaded_dataset_names,
+    get_imported_dataset_names,
     is_profile_report_available,
     get_elements_inside_directory,
 )
@@ -101,7 +101,7 @@ def set_callbacks(app) -> dash.Dash:
 
         :return: List of checklist components.
         """
-        imported_datasets = get_uploaded_dataset_names()
+        imported_datasets = get_imported_dataset_names()
         return get_checklist_components(imported_datasets)
 
     def dataset_name_is_already_in_use(dataset_name: str) -> bool:
@@ -112,7 +112,7 @@ def set_callbacks(app) -> dash.Dash:
 
         :return: Bool.
         """
-        return dataset_name in get_uploaded_dataset_names()
+        return dataset_name in get_imported_dataset_names()
 
     def dataset_can_be_imported(dataset_name: str) -> bool:
         """

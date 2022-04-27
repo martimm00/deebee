@@ -37,7 +37,7 @@ def has_extension(file_name: str) -> bool:
     return False
 
 
-def ends_in(ending: str, string: str) -> bool:
+def ends_with(ending: str, string: str) -> bool:
     """
     This function returns if a given string ends in a certain ending or extension.
 
@@ -97,7 +97,7 @@ def is_dataset_name(name: str) -> bool:
 
     :return: Bool.
     """
-    return any([ends_in("." + ending, name) for ending in SUPPORTED_DATASET_TYPES])
+    return any([ends_with("." + ending, name) for ending in SUPPORTED_DATASET_TYPES])
 
 
 def is_profile_report_name(name: str) -> bool:
@@ -108,7 +108,7 @@ def is_profile_report_name(name: str) -> bool:
 
     :return: Bool.
     """
-    return ends_in(".html", name)
+    return ends_with(".html", name)
 
 
 def is_csv_file_by_name(name: str) -> bool:
@@ -119,7 +119,7 @@ def is_csv_file_by_name(name: str) -> bool:
 
     :return: Bool.
     """
-    return any([ends_in("." + ending, name) for ending in ["csv", "CSV"]])
+    return any([ends_with("." + ending, name) for ending in ["csv", "CSV"]])
 
 
 def is_excel_file_by_name(name: str) -> bool:
@@ -130,10 +130,10 @@ def is_excel_file_by_name(name: str) -> bool:
 
     :return: Bool.
     """
-    return any([ends_in("." + ending, name) for ending in ["xlsx", "XLSX"]])
+    return any([ends_with("." + ending, name) for ending in ["xlsx", "XLSX"]])
 
 
-def get_uploaded_dataset_names() -> list:
+def get_imported_dataset_names() -> list:
     """
     Returns the names of all uploaded datasets from the upload path.
 
@@ -369,6 +369,15 @@ def make_dir(path: os.path) -> None:
     :param path: A new path.
     """
     os.makedirs(path)
+
+
+def get_name_from_file_name(file_name: str) -> str:
+    """
+    Returns the name of the file given the whole filename, including the extension.
+
+    :param file_name: String with the whole filename, including the extension.
+    """
+    return ".".join(file_name.split(".")[:-1])
 
 
 def get_file_name_by_path(path: os.path) -> str:
