@@ -54,14 +54,15 @@ def apply_expectation_suite(
 ):
     """
     Used to apply Expectation Suite to an available dataset.
+
     :param context: great_expectations context object.
     :param validate: Int with its number of clicks.
-    :param selected_expectation_suites: List that contains currently
-    selected Expectation Suites.
-    :param selected_datasets: List that contains currently selected
-    datasets.
-    :return: Whether a warning has to be displayed, its message and a
-    JSON file that tells the app there is a new dataset validation.
+    :param selected_expectation_suites: List that contains currently selected Expectation
+    Suites.
+    :param selected_datasets: List that contains currently selected datasets.
+
+    :return: Whether a warning has to be displayed, its message and a JSON file that
+    tells the app there is a new dataset validation.
     """
     # If validate button has been clicked at least once
     if validate:
@@ -75,10 +76,11 @@ def apply_expectation_suite(
 
 def remove_tmp_validation_file(exporting: str) -> None:
     """
-    This function helps to remove temporary created validation file
-    once it is successfully exported.
-    :param exporting: JSON file that tells the function whether the
-    app is exporting a validation result or not.
+    This function helps to remove temporary created validation file once it is
+    successfully exported.
+
+    :param exporting: JSON file that tells the function whether the app is exporting a
+    validation result or not.
     """
     if exporting != "true":
         path = from_json(exporting)
@@ -88,12 +90,11 @@ def remove_tmp_validation_file(exporting: str) -> None:
 
 def build_tmp_validation_file(file_path: os.path) -> os.path:
     """
-    Builds temporary validation file so that it can be exported with
-    a proper name.
-    :param file_path: String with the path to the original validation
-    file.
-    :return: String with the path to the new temporary validation
-    file.
+    Builds temporary validation file so that it can be exported with a proper name.
+
+    :param file_path: String with the path to the original validation file.
+
+    :return: String with the path to the new temporary validation file.
     """
     validation_result = load_validation_result(file_path)
     tmp_file_path = build_tmp_validation_file_path_from_result(
@@ -107,10 +108,11 @@ def build_tmp_validation_file_path_from_result(
     file_path: os.path, validation_result: dict
 ) -> os.path:
     """
-    Builds temporary validation file path from original validation
-    result JSON file path.
+    Builds temporary validation file path from original validation result JSON file path.
+
     :param file_path: String with original validation file path.
     :param validation_result: Dict with validation result.
+
     :return: String with temporary validation file path.
     """
     dataset_name, expectation_suite_name = get_elements_for_tmp_file_name(
@@ -123,12 +125,13 @@ def build_tmp_validation_file_path_from_result(
 
 def get_elements_for_tmp_file_name(validation_result: dict) -> (str, str):
     """
-    Returns the name of the Expectation Suite name used to validate
-    the dataset, as well as the dataset name from validated dataset
-    path.
+    Returns the name of the Expectation Suite name used to validate the dataset, as well
+    as the dataset name from validated dataset path.
+
     :param validation_result: Dict with validation result.
-    :return: Two strings, one containing dataset name and the other
-    containing Expectation Suite name.
+
+    :return: Two strings, one containing dataset name and the other containing
+    Expectation Suite name.
     """
     expectation_suite_name = get_validation_expectation_suite_name(validation_result)
     dataset_path = get_validated_dataset_path(validation_result)
@@ -140,11 +143,12 @@ def build_tmp_validation_file_name(
     expectation_suite_name: str, dataset_name: str
 ) -> str:
     """
-    Builds temporary validation file name in order to export a file
-    with a name that has sense.
-    :param expectation_suite_name: String with Expectation Suite
-    name.
+    Builds temporary validation file name in order to export a file with a name that has
+    sense.
+
+    :param expectation_suite_name: String with Expectation Suite name.
     :param dataset_name: String with validated dataset name.
+
     :return: String with full file name.
     """
     return expectation_suite_name + " over " + dataset_name + ".json"
@@ -152,12 +156,13 @@ def build_tmp_validation_file_name(
 
 def get_validation_result_info(validation_result: dict) -> (str, str, str):
     """
-    Returns some validation result information, such as dataset name,
-    timestamp and success.
-    :param validation_result: Dict that contains all validation
-    result details.
-    :return: String with the dataset name, string with validation
-    timestamp and string with success.
+    Returns some validation result information, such as dataset name, timestamp and
+    success.
+
+    :param validation_result: Dict that contains all validation result details.
+
+    :return: String with the dataset name, string with validation timestamp and string
+    with success.
     """
     filename = get_file_name(get_validated_dataset_path(validation_result))
     date = get_validation_timestamp(validation_result)
@@ -167,10 +172,12 @@ def get_validation_result_info(validation_result: dict) -> (str, str, str):
 
 def get_validation_result_json_path(validation_html: str) -> str:
     """
-    Returns validation result JSON file from List Group Item href
-    (great_expectations HTML file).
-    :param validation_html: String with path to great_expectations
-    HTML validation result file.
+    Returns validation result JSON file from List Group Item href (great_expectations
+    HTML file).
+
+    :param validation_html: String with path to great_expectations HTML validation result
+    file.
+
     :return: String with the path to the validation result JSON file.
     """
     validations_folder = get_validations_path()
@@ -200,15 +207,15 @@ def build_path_to_validation_file(
     file_name: str,
 ) -> os.path:
     """
-    As its name suggests, this function builds the path to a
-    validation file allocated at validation_results directory.
+    As its name suggests, this function builds the path to a validation file allocated at
+    validation_results directory.
+
     :param validations_folder: String with the path to this folder.
-    :param expectation_suite_folder: String with the path to this
-    folder.
-    :param expectation_suite_name: String with the path to this
-    folder.
+    :param expectation_suite_folder: String with the path to this folder.
+    :param expectation_suite_name: String with the path to this folder.
     :param dataset_path: String with the path to this folder.
     :param file_name: String with the path to this file.
+
     :return: String with path to validation file.
     """
     return os.path.join(
@@ -225,10 +232,10 @@ def build_path_to_validation_file(
 
 def remove_validation(href: str) -> None:
     """
-    Removes a validation from both the interface and the file system,
-    based on a given href.
-    :param href: String that contains the path to HTML validation
-    summary.
+    Removes a validation from both the interface and the file system, based on a given
+    href.
+
+    :param href: String that contains the path to HTML validation summary.
     """
     # Getting directories to be removed
     validation_html_path = get_directory_path(get_directory_path(href))
@@ -249,12 +256,10 @@ def remove_validation_file_and_docs(
     validation_html: os.path, validation_json: os.path
 ) -> None:
     """
-    Removes validation JSON and HTML files, which are allocated in
-    different paths.
-    :param validation_html: String with the path to the HTML
-    validation summary.
-    :param validation_json: String with the path to the JSON
-    validation file.
+    Removes validation JSON and HTML files, which are allocated in different paths.
+
+    :param validation_html: String with the path to the HTML validation summary.
+    :param validation_json: String with the path to the JSON validation file.
     """
     try:
         delete_directory(validation_html)
@@ -265,10 +270,9 @@ def remove_validation_file_and_docs(
 
 def look_for_empty_validation_directories(expectation_suite_name: str) -> None:
     """
-    Looks for empty validation directories and removes them if they
-    are left empty.
-    :param expectation_suite_name: String with Expectation Suite
-    name.
+    Looks for empty validation directories and removes them if they are left empty.
+
+    :param expectation_suite_name: String with Expectation Suite name.
     """
     validations_folder = get_validations_path()
     expectation_suite_folder = get_expectation_suite_folder()
@@ -301,14 +305,13 @@ def remove_empty_validation_folders(
 ) -> None:
     """
     Removes validation folders if they are left empty.
-    :param ge_validation_extension_folder: String with the path to
-    HTML validation summary file.
-    :param ge_validation_name_folder: String with the path to HTML
-    validation summary folder.
-    :param validation_extension_folder: String with the path to JSON
-    validation file.
-    :param validation_name_folder: String with the path to JSON
-    validation folder.
+
+    :param ge_validation_extension_folder: String with the path to HTML validation
+    summary file.
+    :param ge_validation_name_folder: String with the path to HTML validation summary
+    folder.
+    :param validation_extension_folder: String with the path to JSON validation file.
+    :param validation_name_folder: String with the path to JSON validation folder.
     """
     try:
         if is_list_empty(get_elements_inside_directory(validation_extension_folder)):
@@ -324,8 +327,9 @@ def remove_empty_validation_folders(
 def load_validation_result(validation_path: os.path) -> dict:
     """
     Loads validation result from JSON stored file.
-    :param validation_path: String with the path to JSON validation
-    file.
+
+    :param validation_path: String with the path to JSON validation file.
+
     :return: Dict with validation result.
     """
     with open(validation_path, "r") as vr:
@@ -336,8 +340,9 @@ def load_validation_result(validation_path: os.path) -> dict:
 def get_validation_metadata(validation_result: dict) -> dict:
     """
     Returns validation metadata.
-    :param validation_result: Dict that contains validation
-    information.
+
+    :param validation_result: Dict that contains validation information.
+
     :return: Dict with validation metadata.
     """
     return validation_result["meta"]
@@ -346,7 +351,9 @@ def get_validation_metadata(validation_result: dict) -> dict:
 def get_validated_dataset_path(validation_result: dict) -> str:
     """
     Returns validated dataset path.
+
     :param validation_result: Dict with validation result.
+
     :return: String that contains path to validated dataset.
     """
     validation_metadata = get_validation_metadata(validation_result)
@@ -355,9 +362,10 @@ def get_validated_dataset_path(validation_result: dict) -> str:
 
 def get_validation_expectation_suite_name(validation_result: dict) -> str:
     """
-    Returns the name of the Expectation Suite used to validate the
-    dataset.
+    Returns the name of the Expectation Suite used to validate the dataset.
+
     :param validation_result: Dict with validation result.
+
     :return: String that contains Expectation Suite name.
     """
     validation_metadata = get_validation_metadata(validation_result)
@@ -367,7 +375,9 @@ def get_validation_expectation_suite_name(validation_result: dict) -> str:
 def get_validation_timestamp(validation_result: dict) -> str:
     """
     Returns validation timestamp.
+
     :param validation_result: Dict with validation result.
+
     :return: String that contains validation timestamp.
     """
     validation_metadata = get_validation_metadata(validation_result)
@@ -377,7 +387,9 @@ def get_validation_timestamp(validation_result: dict) -> str:
 def is_validation_successful(validation_result: dict) -> str:
     """
     Returns validation success.
+
     :param validation_result: Dict with validation result.
+
     :return: String with validation success or failure.
     """
     return validation_result["success"]
@@ -385,10 +397,10 @@ def is_validation_successful(validation_result: dict) -> str:
 
 def list_validations() -> list:
     """
-    This function is used to list all available validations, and
-    focuses on showing different name validations.
-    :return: List with different validations that is going to be
-    shown in the interface.
+    This function is used to list all available validations, and focuses on showing
+    different name validations.
+
+    :return: List with different validations that is going to be shown in the interface.
     """
     children = []
     expectation_suite_folder = get_expectation_suite_folder()
@@ -412,16 +424,17 @@ def append_different_extension_validations_loop(
     validation_results_counter: int,
 ) -> int:
     """
-    This function is used to list all available validations, and
-    focuses on showing different name validations.
-    :param children: List of validations that are going to be shown
-    in the interface.
-    :param expectation_suite_folder: String with the name of the
-    Expectation Suite without the extension.
-    :param expectation_suite_folder_directory: String with the path
-    to different extension validations.
-    :param validation_results_counter: Integer with the amount of
-    validations that were found.
+    This function is used to list all available validations, and focuses on showing
+    different name validations.
+
+    :param children: List of validations that are going to be shown in the interface.
+    :param expectation_suite_folder: String with the name of the Expectation Suite
+    without the extension.
+    :param expectation_suite_folder_directory: String with the path to different
+    extension validations.
+    :param validation_results_counter: Integer with the amount of validations that were
+    found.
+
     :return: Integer with the amount of validations that are found.
     """
     expectation_suites_names = os.listdir(expectation_suite_folder_directory)
@@ -454,20 +467,20 @@ def append_different_dataset_validations_loop(
     validation_results_counter: int,
 ) -> int:
     """
-    This function is used to list all available validations, and
-    focuses on showing different name validations.
-    :param children: List of validations that are going to be shown
-    in the interface.
-    :param expectation_suite_folder: String with the name of the
-    Expectation Suite without the extension.
-    :param expectation_suites_extensions_directory: String with the
-    path to different validation files.
-    :param expectation_suite_name: String with the name of the
-    Expectation Suite.
-    :param outdated: String that tells whether the Expectation Suite
-    used to validate is still valid and usable.
-    :param validation_results_counter: Integer with the amount of
-    validations that were found.
+    This function is used to list all available validations, and focuses on showing
+    different name validations.
+
+    :param children: List of validations that are going to be shown in the interface.
+    :param expectation_suite_folder: String with the name of the Expectation Suite
+    without the extension.
+    :param expectation_suites_extensions_directory: String with the path to different
+    validation files.
+    :param expectation_suite_name: String with the name of the Expectation Suite.
+    :param outdated: String that tells whether the Expectation Suite used to validate is
+    still valid and usable.
+    :param validation_results_counter: Integer with the amount of validations that were
+    found.
+
     :return: Integer with the amount of validations that are found.
     """
     datasets_validations = os.listdir(expectation_suites_extensions_directory)
@@ -516,13 +529,13 @@ def apply_expectation_suite_to_dataset(
 ) -> (bool, str, list):
     """
     This function applies an Expectation Suite to a dataset.
+
     :param context: great_expectations object.
     :param selected_datasets: List with all selected datasets.
-    :param selected_expectation_suites: List with all selected
-    expectation suites.
-    :return: Boolean that manages if a warning displays or not, a
-    string with its message and a JSON file with the data of a new
-    dataset.
+    :param selected_expectation_suites: List with all selected expectation suites.
+
+    :return: Boolean that manages if a warning displays or not, a string with its message
+    and a JSON file with the data of a new dataset.
     """
     error_message = check_if_one_expectation_suite_and_one_dataset_are_selected(
         selected_expectation_suites, selected_datasets
@@ -570,15 +583,15 @@ def check_dataset_compatibility(
     dataset: pd.DataFrame, expectation_and_columns: dict
 ) -> str:
     """
-    This function checks if a dataset is compatible with previously
-    defined expectations in an Expectation Suite.
+    This function checks if a dataset is compatible with previously defined expectations
+    in an Expectation Suite.
+
     :param dataset: Pandas DataFrame that has to be checked.
-    :param expectation_and_columns: Dictionary that contains all
-    currently defined expectations, the columns where they have to be
-    applied and their params (if any).
-    :return: String with the message that has to be displayed in a
-    warning. If it returns an empty string, then it means no warning
-    has to be popped.
+    :param expectation_and_columns: Dictionary that contains all currently defined
+    expectations, the columns where they have to be applied and their params (if any).
+
+    :return: String with the message that has to be displayed in a warning. If it returns
+    an empty string, then it means no warning has to be popped.
     """
     message = defaults.WARNING_MESSAGES["empty_message"]
     dataset_columns = set(list(dataset.columns))
@@ -597,13 +610,14 @@ def check_if_one_expectation_suite_and_one_dataset_are_selected(
     selected_expectation_suites: list, selected_datasets: list
 ) -> str:
     """
-    Returns warning messages when not only one dataset and one
-    Expectation Suite are selected.
-    :param selected_expectation_suites: List with selected
-    expectation suites.
+    Returns warning messages when not only one dataset and one Expectation Suite are
+    selected.
+
+    :param selected_expectation_suites: List with selected expectation suites.
     :param selected_datasets: List with selected datasets.
-    :return: String with respective warning message, or an empty
-    string if no warning has to be popped.
+
+    :return: String with respective warning message, or an empty string if no warning has
+    to be popped.
     """
     message = defaults.WARNING_MESSAGES["empty_message"]
     if not selected_expectation_suites:
@@ -630,16 +644,16 @@ def compute_results_from_expectation_suite_and_dataset(
     test_dataset_path: str,
 ) -> str:
     """
-    Computes result of applying an Expectation Suite to a dataset
-    with the Expectation Suite name, its expectations and dataset
-    path.
+    Computes result of applying an Expectation Suite to a dataset with the Expectation
+    Suite name, its expectations and dataset path.
+
     :param context: great_expectations context object.
-    :param expectation_and_columns: Dict with expectations, the
-    columns where they have to be applied and parameters, if any.
-    :param expectation_suite_name: String with Expectation Suite
-    name.
-    :param test_dataset_path: String that contains the path to the
-    dataset that is going to be validated.
+    :param expectation_and_columns: Dict with expectations, the columns where they have
+    to be applied and parameters, if any.
+    :param expectation_suite_name: String with Expectation Suite name.
+    :param test_dataset_path: String that contains the path to the dataset that is going
+    to be validated.
+
     :return: String with an warning message.
     """
     expectation_suite_name_object = get_expectation_suite_name_object(
@@ -658,14 +672,14 @@ def compute_results(
     expectations_ids: dict, expectation_and_columns: dict, batch
 ) -> (bool, str):
     """
-    This function is used to compute validation results when applying
-    an Expectation Suite to a dataset.
-    :param expectations_ids: String with great_expectations
-    expectation names.
-    :param expectation_and_columns: Dictionary that contains all
-    currently defined expectations, the columns where they have to
-    be applied and their params (if any).
+    This function is used to compute validation results when applying an Expectation
+    Suite to a dataset.
+
+    :param expectations_ids: String with great_expectations expectation names.
+    :param expectation_and_columns: Dictionary that contains all currently defined
+    expectations, the columns where they have to be applied and their params (if any).
     :param batch: great_expectations data batch object.
+
     :return: String with warning message.
     """
     error_message = compute_results_by_expectation_type(
@@ -683,13 +697,13 @@ def compute_results_by_expectation_type(
     expectation_and_columns: dict, expectations_ids: dict
 ) -> str:
     """
-    This function is used to compute validation results when applying
-    an Expectation Suite to a dataset, by expectation type.
-    :param expectation_and_columns: Dictionary that contains all
-    currently defined expectations, the columns where they have to
-    be applied and their params (if any).
-    :param expectations_ids: String with great_expectations
-    expectation names.
+    This function is used to compute validation results when applying an Expectation
+    Suite to a dataset, by expectation type.
+
+    :param expectation_and_columns: Dictionary that contains all currently defined
+    expectations, the columns where they have to be applied and their params (if any).
+    :param expectations_ids: String with great_expectations expectation names.
+
     :return: String with warning message.
     """
     error_message = defaults.WARNING_MESSAGES["empty_message"]
@@ -710,14 +724,14 @@ def compute_result_for_each_expectation(
     expectations_ids: dict,
 ) -> str:
     """
-    This function is used to compute validation results when applying
-    an Expectation Suite to a dataset, one expectation at a time.
-    :param expectation_type_dict: Dictionary that contains all
-    currently defined expectations, the columns where they have to be
-    applied and their params (if any).
+    This function is used to compute validation results when applying an Expectation
+    Suite to a dataset, one expectation at a time.
+
+    :param expectation_type_dict: Dictionary that contains all currently defined
+    expectations, the columns where they have to be applied and their params (if any).
     :param expectation_name: String with expectation name.
-    :param expectations_ids: String with great_expectations
-    expectation names.
+    :param expectations_ids: String with great_expectations expectation names.
+
     :return: String with warning message.
     """
     message = defaults.WARNING_MESSAGES["empty_message"]
@@ -746,11 +760,13 @@ def store_validation(
 ):
     """
     This function is used to store the validation as a file.
+
     :param context: great_expectations context object.
     :param expectation_suite_name: ExpectationSuiteName object.
     :param batch_kwargs: Dict with batch_kwargs.
-    :return: great_expectations ValidationResultIdentifier object.
-    This output is not actually not being used by the app for now.
+
+    :return: great_expectations ValidationResultIdentifier object. This output is not
+    actually not being used by the app for now.
     """
     results = LegacyCheckpoint(
         name="_temp_checkpoint",
