@@ -53,13 +53,12 @@ def get_batch(context, batch_kwargs: dict, expectation_suite: dict):
     return context.get_batch(batch_kwargs, expectation_suite)
 
 
-def get_batch_expectation_functions(batch, function_name: str) -> dict:
+def get_batch_expectation_functions(batch) -> dict:
     """
     Used when creating or editing Expectation Suites, relates each Great Expectations
     internal expectation name to its respective batch function.
 
     :param batch: GE batch object, which contains the loaded dataset.
-    :param function_name: String with the name of the method to be called.
 
     :return: Dictionary where the keys are strings with GE internal expectation names and
     the values are batch functions.

@@ -3,6 +3,7 @@ import pandas as pd
 from great_expectations.checkpoint import LegacyCheckpoint
 
 from constants.defaults import EMPTY_STRING
+from constants.warning_constants import WARNING_MESSAGES
 from constants.great_expectations_constants import OUTDATED
 from constants.path_constants import EXPECTATION_SUITES_PATH
 
@@ -32,7 +33,7 @@ from src.batch_operations import (
 from src.low_level_operations import (
     delete_file,
     write_file,
-    get_file_name,
+    get_file_name_by_path,
     get_validations_path,
     get_directory_path,
     get_directory_name,
@@ -71,7 +72,7 @@ def apply_expectation_suite(
             selected_datasets,
             selected_expectation_suites,
         )
-    return False, defaults.WARNING_MESSAGES["empty_message"], to_json({})
+    return False, WARNING_MESSAGES["empty_message"], to_json({})
 
 
 def remove_tmp_validation_file(exporting: str) -> None:
@@ -135,7 +136,7 @@ def get_elements_for_tmp_file_name(validation_result: dict) -> (str, str):
     """
     expectation_suite_name = get_validation_expectation_suite_name(validation_result)
     dataset_path = get_validated_dataset_path(validation_result)
-    dataset_name = get_file_name(dataset_path).split(".")[0]
+    dataset_name = get_file_name_by_path(dataset_path).split(".")[0]
     return dataset_name, expectation_suite_name
 
 
@@ -164,7 +165,7 @@ def get_validation_result_info(validation_result: dict) -> (str, str, str):
     :return: String with the dataset name, string with validation timestamp and string
     with success.
     """
-    filename = get_file_name(get_validated_dataset_path(validation_result))
+    filename = get_file_name_by_path(get_validated_dataset_path(validation_result))
     date = get_validation_timestamp(validation_result)
     success = is_validation_successful(validation_result)
     return filename, date, success
@@ -187,7 +188,7 @@ def get_validation_result_json_path(validation_html: str) -> str:
     expectation_suite_name = get_directory_name(
         get_directory_path(get_directory_path(get_directory_path(validation_html)))
     )
-    file_name = change_extension(get_file_name(validation_html), "json")
+    file_name = change_extension(get_file_name_by_path(validation_html), "json")
     dataset_path = get_directory_name(get_directory_path(validation_html))
     validation_json_path = build_path_to_validation_file(
         validations_folder,
@@ -593,14 +594,14 @@ def check_dataset_compatibility(
     :return: String with the message that has to be displayed in a warning. If it returns
     an empty string, then it means no warning has to be popped.
     """
-    message = defaults.WARNING_MESSAGES["empty_message"]
+    message = WARNING_MESSAGES["empty_message"]
     dataset_columns = set(list(dataset.columns))
     expectations_columns = []
     for expectation_name in expectation_and_columns:
         expectations_columns += list(expectation_and_columns[expectation_name].keys())
     expectations_columns = set(expectations_columns)
     if not expectations_columns.issubset(dataset_columns):
-        message = defaults.WARNING_MESSAGES["validation_warning"][
+        message = WARNING_MESSAGES["validation_warning"][
             "dataset_not_compatible"
         ]
     return message
@@ -619,19 +620,19 @@ def check_if_one_expectation_suite_and_one_dataset_are_selected(
     :return: String with respective warning message, or an empty string if no warning has
     to be popped.
     """
-    message = defaults.WARNING_MESSAGES["empty_message"]
+    message = WARNING_MESSAGES["empty_message"]
     if not selected_expectation_suites:
-        message = defaults.WARNING_MESSAGES["validation_warning"][
+        message = WARNING_MESSAGES["validation_warning"][
             "select_expectation_suite_and_file"
         ]
     elif len(selected_expectation_suites) != 1:
-        message = defaults.WARNING_MESSAGES["validation_warning"][
+        message = WARNING_MESSAGES["validation_warning"][
             "only_one_expectation_suite"
         ]
     elif not selected_datasets:
-        message = defaults.WARNING_MESSAGES["validation_warning"]["select_a_dataset"]
+        message = WARNING_MESSAGES["validation_warning"]["select_a_dataset"]
     elif len(selected_datasets) != 1:
-        message = defaults.WARNING_MESSAGES["validation_warning"][
+        message = WARNING_MESSAGES["validation_warning"][
             "select_only_one_dataset"
         ]
     return message
@@ -706,7 +707,7 @@ def compute_results_by_expectation_type(
 
     :return: String with warning message.
     """
-    error_message = defaults.WARNING_MESSAGES["empty_message"]
+    error_message = WARNING_MESSAGES["empty_message"]
     for expectation_name in expectation_and_columns:
         error_message = compute_result_for_each_expectation(
             expectation_and_columns[expectation_name],
@@ -734,7 +735,7 @@ def compute_result_for_each_expectation(
 
     :return: String with warning message.
     """
-    message = defaults.WARNING_MESSAGES["empty_message"]
+    message = WARNING_MESSAGES["empty_message"]
     for column in expectation_type_dict:
         parameters = expectation_type_dict[column]
         try:
@@ -747,7 +748,7 @@ def compute_result_for_each_expectation(
             else:
                 expectations_ids[expectation_name](column)
         except:
-            message = defaults.WARNING_MESSAGES["validation_warning"][
+            message = WARNING_MESSAGES["validation_warning"][
                 "wrong_expectations"
             ]
     return message

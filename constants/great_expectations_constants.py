@@ -38,4 +38,5 @@ EXPECTATION_N_PARAMS = {
     "expect_column_values_to_be_of_type": 1,
     "expect_column_values_to_be_between": 2,
 }
+SUPPORTED_EXPECTATIONS = list(EXPECTATION_N_PARAMS.keys())
 OUTDATED = "[OUTDATED] "

@@ -1,4 +1,6 @@
 pandas
 dash
+dash_uploader
+dash_bootstrap_components
 pyyaml
 great_expectations

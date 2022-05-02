@@ -144,7 +144,7 @@ def initialize() -> None:
     """
     data_path = IMPORT_DIRECTORY_PATH
     directory = toolkit.parse_cli_config_file_location(
-        config_file_locations=data_path
+        config_file_location=data_path
     ).get("directory")
     target_directory = get_absolute_path(directory)
     ge_dir = get_full_path_to_ge_dir(target_directory)

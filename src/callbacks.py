@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
 
+from src.expectation_operations import is_expectation_set_name_valid
 from src.front_end_operations import (
     is_trigger,
     hide_component,
@@ -42,13 +43,13 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         [
-            Output("dataset_checklist_div", "style"),
-            Output("no_imported_dataset_div", "style")
+            Output("imported_datasets_checklist_div", "style"),
+            Output("no_imported_datasets_div", "style")
         ],
         Input("imported_datasets_checklist", "options"),
         [
-            State("dataset_checklist_div", "style"),
-            State("no_imported_dataset_div", "style")
+            State("imported_datasets_checklist_div", "style"),
+            State("no_imported_datasets_div", "style")
         ]
     )
     def switch_dataset_listing_styles(
@@ -95,7 +96,7 @@ def set_callbacks(app) -> dash.Dash:
 
         return
 
-    def refresh_imported_dataset_listing() -> list:
+    def refresh_imported_dataset_listing() -> (list, list):
         """
         Returns a list of dcc.Checklist components, based on imported datasets.
 
@@ -148,7 +149,7 @@ def set_callbacks(app) -> dash.Dash:
             Output("imported_datasets_checklist", "options"),
             Output("imported_datasets_checklist", "value"),
             Output("rename_dataset_input", "value"),
-            Output("imported_datasets_store", "data")
+            Output("imported_datasets_dropdown", "options"),
         ],
         [
             Input("dataset_uploader", "isCompleted"),
@@ -160,7 +161,6 @@ def set_callbacks(app) -> dash.Dash:
             State("imported_datasets_checklist", "value"),
             State("dataset_uploader", "fileNames"),
             State("rename_dataset_input", "value"),
-            State("imported_datasets_store", "data")
         ]
     )
     def update_dataset_listing(
@@ -171,7 +171,6 @@ def set_callbacks(app) -> dash.Dash:
         selected_datasets: list,
         uploaded_file_names: list,
         new_dataset_name: str,
-        imported_datasets: dict
     ) -> (list, list):
         """
         Updates imported datasets listing.
@@ -199,7 +198,6 @@ def set_callbacks(app) -> dash.Dash:
                 if dataset_can_be_imported(dataset_name):
                     new_dataset_path = get_imported_dataset_path(dataset_name)
                     move(dataset_path, new_dataset_path)
-                    imported_datasets[dataset_name] = Table(dataset_name, dataset_path)
 
                 # If it cannot be imported, delete it
                 else:
@@ -211,8 +209,6 @@ def set_callbacks(app) -> dash.Dash:
             # If there are selected datasets, delete them
             if not is_list_empty(selected_datasets):
                 delete_datasets(selected_datasets)
-                for dataset_name in selected_datasets:
-                    del imported_datasets[dataset_name]
 
         # If rename button has been used
         elif is_trigger("rename_dataset_button"):
@@ -234,13 +230,10 @@ def set_callbacks(app) -> dash.Dash:
 
                         # Rename the selected dataset
                         rename(directory_path, current_name, new_dataset_name)
-                        imported_datasets[new_dataset_name] = imported_datasets.pop(current_name)
-                        imported_datasets[new_dataset_name].name = new_dataset_name
-
 
         # Getting current file names in the directory
         available_options = refresh_imported_dataset_listing()
-        return available_options, EMPTY_LIST, EMPTY_STRING, imported_datasets
+        return available_options, EMPTY_LIST, EMPTY_STRING, available_options
 
     @app.callback(
         [
@@ -332,5 +325,135 @@ def set_callbacks(app) -> dash.Dash:
             else:
                 style = display_component(current_style)
         return style
+
+    @app.callback(
+        Output("expectation_set_definer_modal", "is_open"),
+        Input("open_expectation_set_definer_button", "n_clicks"),
+        State("expectation_set_definer_modal", "is_open"),
+        prevent_initial_call=True
+    )
+    def toggle_expectation_set_definer(open_modal: int, modal_state) -> bool:
+        """
+        Opens the expectation set definer when the button is clicked.
+
+        :param open_modal: Number of clicks.
+        :param modal_state: Current modal state.
+
+        :return: Bool.
+        """
+        return True
+
+    @app.callback(
+        [
+            Output("expectation_sets_checklist_div", "style"),
+            Output("no_expectation_sets_div", "style")
+        ],
+        Input("expectation_sets_checklist", "options"),
+        [
+            State("expectation_sets_checklist_div", "style"),
+            State("no_expectation_sets_div", "style")
+        ]
+    )
+    def switch_expectation_sets_listing_styles(
+            available_options: list,
+            checklist_div_style: dict,
+            no_sets_div_style: dict
+    ) -> (dict, dict):
+        """
+        Switches between two Div components, depending on whether there are imported
+        datasets or not.
+
+        :param available_options: List with the current dcc.Checklist options.
+        :param checklist_div_style: Dictionary with the current style.
+        :param no_sets_div_style: Dictionary with the current style.
+
+        :return: Dictionaries with updated styles
+        """
+        # In case there are no imported datasets, hide the checklist and show the message
+        if is_list_empty(available_options):
+            checklist_div_style = hide_component(checklist_div_style)
+            no_sets_div_style = display_component(no_sets_div_style)
+
+        # In case there are, hide the message and show the checklist
+        else:
+            checklist_div_style = display_component(checklist_div_style)
+            no_sets_div_style = hide_component(no_sets_div_style)
+
+        # Returning updated styles
+        return checklist_div_style, no_sets_div_style
+
+    @app.callback(
+        Output("expectation_definer_modal", "is_open"),
+        Input("new_expectation_button", "n_clicks"),
+        [
+            State("expectation_set_name_input", "value"),
+            State("imported_datasets_checklist", "value"),
+            State("expectation_sets_checklist", "options"),
+            State("expectation_definer_modal", "is_open")
+        ],
+        prevent_initial_call=True
+    )
+    def toggle_expectation_definer(
+        new_expectation: int,
+        set_name: str,
+        dataset_name: str,
+        current_sets: list,
+        modal_state
+    ) -> bool:
+        """
+        Opens the expectation definer when the button is clicked, only if conditions
+        match.
+
+        :param new_expectation: Number of clicks.
+        :param set_name: Current name typed by the user.
+        :param dataset_name: Currently selected dataset or table.
+        :param current_sets: List with currently available expectation sets.
+        :param modal_state: Current modal state.
+
+        :return: Bool.
+        """
+        if set_name not in current_sets and dataset_name:
+            if is_expectation_set_name_valid(set_name):
+                modal_state = True
+        return modal_state
+
+    @app.callback(
+        [
+            Output("expectations_checklist_div", "style"),
+            Output("no_expectations_div", "style")
+        ],
+        Input("expectations_checklist", "options"),
+        [
+            State("expectations_checklist_div", "style"),
+            State("no_expectations_div", "style")
+        ]
+    )
+    def switch_expectations_listing_styles(
+            current_expectations: list,
+            checklist_div_style: dict,
+            no_expectations_div_style: dict
+    ) -> (dict, dict):
+        """
+        Switches between two Div components, depending on whether there are imported
+        datasets or not.
+
+        :param current_expectations: List with the current dcc.Checklist options.
+        :param checklist_div_style: Dictionary with the current style.
+        :param no_expectations_div_style: Dictionary with the current style.
+
+        :return: Dictionaries with updated styles
+        """
+        # In case there are no imported datasets, hide the checklist and show the message
+        if is_list_empty(current_expectations):
+            checklist_div_style = hide_component(checklist_div_style)
+            no_expectations_div_style = display_component(no_expectations_div_style)
+
+        # In case there are, hide the message and show the checklist
+        else:
+            checklist_div_style = display_component(checklist_div_style)
+            no_expectations_div_style = hide_component(no_expectations_div_style)
+
+        # Returning updated styles
+        return checklist_div_style, no_expectations_div_style
 
     return app

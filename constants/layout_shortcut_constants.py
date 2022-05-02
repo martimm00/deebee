@@ -1,4 +1,4 @@
-MAIN_COL_STYLE={
+MAIN_COL_STYLE = {
     "padding": "30px",
     "height": "80vh",
     "border": "3px black solid",

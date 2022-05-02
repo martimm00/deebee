@@ -5,6 +5,7 @@ import dash_uploader as du
 import dash_bootstrap_components as dbc
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
+from constants.great_expectations_constants import SUPPORTED_EXPECTATIONS
 from constants.layout_shortcut_constants import MAIN_COL_STYLE, CHECKLIST_DIV_STYLE
 
 
@@ -128,9 +129,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                             )
                                                         ],
                                                         id="delete_dataset_div",
-                                                        style={
-                                                            "textAlign": "right"
-                                                        }
+                                                        style={"textAlign": "right"}
                                                     )
                                                 ],
                                                 width=3
@@ -148,19 +147,19 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                 inputStyle={"marginRight": "15px"}
                                             )
                                         ],
-                                        id="dataset_checklist_div",
+                                        id="imported_datasets_checklist_div",
                                         style=CHECKLIST_DIV_STYLE
                                     ),
                                     html.Div(
                                         [
                                             "There are no imported files."
                                         ],
-                                        id="no_imported_dataset_div",
+                                        id="no_imported_datasets_div",
                                         style={
                                             "marginTop": "20px",
                                             "marginBottom": "20px",
                                             "padding": "25px",
-                                            "paddingTop": "13vh",
+                                            "paddingTop": "14vh",
                                             "width": "100%",
                                             "height": "30vh",
                                             "backgroundColor": "#fff",
@@ -221,13 +220,40 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     html.Div(
                                         [
                                             dcc.Checklist(
+                                                id="expectation_sets_checklist",
                                                 options=EMPTY_LIST,
                                                 value=EMPTY_LIST,
                                                 labelStyle={"display": "block"},
                                                 inputStyle={"marginRight": "15px"}
                                             )
                                         ],
+                                        id="expectation_sets_checklist_div",
                                         style=CHECKLIST_DIV_STYLE
+                                    ),
+                                    html.Div(
+                                        [
+                                            "There are no expectation sets."
+                                        ],
+                                        id="no_expectation_sets_div",
+                                        style={
+                                            "marginTop": "20px",
+                                            "marginBottom": "20px",
+                                            "padding": "25px",
+                                            "paddingTop": "14vh",
+                                            "width": "100%",
+                                            "height": "30vh",
+                                            "backgroundColor": "#fff",
+                                            "border": "3px black solid",
+                                            "borderRadius": "20px",
+                                            "overflow": "scroll",
+                                            "textAlign": "center",
+                                            "display": "none"
+                                        }
+                                    ),
+                                    dbc.Button(
+                                        "Define expectations",
+                                        id="open_expectation_set_definer_button",
+                                        color="secondary"
                                     )
                                 ],
                                 style=MAIN_COL_STYLE
@@ -270,6 +296,132 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                 autofocus=True,
                 centered=True,
                 fullscreen=True,
+            ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(
+                        html.H1("Define expectations")
+                    ),
+                    dbc.ModalBody(
+                        [
+                            html.H5("Name:"),
+                            dcc.Input(
+                                id="expectation_set_name_input",
+                                style={
+                                    "height": "38px",
+                                    "width": "100%",
+                                    "border": "3px black solid",
+                                    "borderRadius": "20px",
+                                    "paddingLeft": "10px",
+                                    "paddingRight": "10px",
+                                    "marginBottom": "15px"
+                                }
+                            ),
+                            html.H5("Table:"),
+                            dcc.Dropdown(
+                                id="imported_datasets_dropdown",
+                                options=EMPTY_LIST,
+                                style={
+                                    "marginBottom": "20px"
+                                }
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Button(
+                                                "New",
+                                                id="new_expectation_button",
+                                                color="secondary"
+                                            )
+                                        ]
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Button(
+                                                "Delete",
+                                                id="delete_expectation_button",
+                                                color="danger"
+                                            )
+                                        ]
+                                    )
+                                ],
+                                justify="between"
+                            ),
+                            html.Div(
+                                [
+                                    dcc.Checklist(
+                                        id="expectations_checklist",
+                                        options=EMPTY_LIST,
+                                        value=EMPTY_LIST,
+                                        labelStyle={"display": "block"},
+                                        inputStyle={"marginRight": "15px"}
+                                    )
+                                ],
+                                id="expectations_checklist_div",
+                                style={
+                                    "marginTop": "20px",
+                                    "marginBottom": "20px",
+                                    "padding": "25px",
+                                    "paddingTop": "23px",
+                                    "width": "100%",
+                                    "height": "30vh",
+                                    "backgroundColor": "#fff",
+                                    "border": "3px black solid",
+                                    "borderRadius": "20px",
+                                    "overflow": "scroll",
+                                    "display": "none"
+                                }
+                            ),
+                            html.Div(
+                                [
+                                    "Defined expectations will appear here."
+                                ],
+                                id="no_expectations_div",
+                                style={"marginTop": "20px", "textAlign": "center"}
+                            )
+                        ]
+                    )
+                ],
+                id="expectation_set_definer_modal",
+            ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(
+                        html.H1("Set an expectation")
+                    ),
+                    dbc.ModalBody(
+                        [
+                            html.H3("Select an expectation:"),
+                            dcc.Dropdown(
+                                id="supported_expectations_dropdown",
+                                options=SUPPORTED_EXPECTATIONS
+                            ),
+                            html.H3("Select a column:"),
+                            dcc.Dropdown(
+                                id="table_columns_dropdown",
+                                options=EMPTY_LIST
+                            ),
+                            dbc.ModalFooter(
+                                [
+                                    dbc.Button(
+                                        "Add",
+                                        id="add_expectation_button"
+                                    ),
+                                    dbc.Button(
+                                        "Close",
+                                        id="close_expectation_definer_button",
+                                        color="secondary"
+                                    )
+                                ]
+                            )
+                        ]
+                    ),
+                ],
+                id="expectation_definer_modal",
+                style={
+                    "padding": "30px"
+                }
             ),
 
             # Auxiliary Divs

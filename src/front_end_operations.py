@@ -1,6 +1,7 @@
 import os
 import dash
 import webbrowser
+import dash_bootstrap_components as dbc
 
 from constants.great_expectations_constants import EXPECTATION_INTERFACE_NAME_DIVIDER
 
@@ -58,9 +59,31 @@ def get_checklist_component(item_name: str) -> dict:
     return {"label": item_name, "value": item_name}
 
 
+def build_list_group_item(
+    item_id: dict, text: str, item_color=None, item_href=None
+) -> dbc.ListGroupItem:
+    """
+    Builds ListGroupItems from the Dash Bootstrap Components library.
+    :param item_id: Dictionary that contains item id.
+    :param text: String that contains item text.
+    :param item_color: String that tells which color the item has to
+    be.
+    :param item_href: String with item href, which points to the HTML
+    validation summary file.
+    :return: dbc.ListGroupItem object to be added to a dbc.ListGroup
+    object.
+    """
+    return dbc.ListGroupItem(
+        text,
+        color=item_color,
+        id=item_id,
+        href=item_href,
+    )
+
+
 def get_checklist_components(item_names: list) -> list:
     """
-    Returns checklist components given the name of some item.
+    Returns checklist components given the name of some items.
 
     :param item_names: List with item names.
     """
@@ -202,3 +225,5 @@ def get_expectation_column_from_interface_name(
     expectation_column = expectation_interface_name[divider_ending:]
     expectation_column = expectation_column.strip("'")
     return expectation_column
+
+

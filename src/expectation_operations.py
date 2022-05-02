@@ -518,3 +518,12 @@ def columns_used_in_expectations(defined_expectations: list) -> set:
 
     # Converting it to a set to avoid duplicity
     return set(columns)
+
+
+def is_expectation_set_name_valid(name: str) -> bool:
+    """
+    Returns if the given expectation set name is valid or not.
+
+    :param name: String with the name to be checked.
+    """
+    return name and name.replace("_", "").isalnum()
