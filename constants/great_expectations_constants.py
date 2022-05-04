@@ -1,21 +1,4 @@
 EXPECTATIONS_MAP = {
-    "table_shape": {
-        "Column to exist": "expect_column_to_exist"
-    },
-    "missing_unique_types": {
-        "Values to be unique": "expect_column_values_to_be_unique",
-        "Values to not be null": "expect_column_values_to_not_be_null",
-        "Values to be of type": "expect_column_values_to_be_of_type",
-    },
-    "sets_ranges": {
-        "Values to be in set": "expect_column_values_to_be_in_set",
-        "Values to be between": "expect_column_values_to_be_between"
-    },
-    "string_matching": {
-        "Value lengths to equal": "expect_column_value_lengths_to_equal"
-    }
-}
-EXPECTATION_ID = {
     "Values to be unique": "expect_column_values_to_be_unique",
     "Values to not be null": "expect_column_values_to_not_be_null",
     "Values to be in set": "expect_column_values_to_be_in_set",
@@ -38,5 +21,27 @@ EXPECTATION_N_PARAMS = {
     "expect_column_values_to_be_of_type": 1,
     "expect_column_values_to_be_between": 2,
 }
-SUPPORTED_EXPECTATIONS = list(EXPECTATION_N_PARAMS.keys())
+EXPECTATION_PARAMS = {
+    "expect_column_values_to_be_unique": {},
+    "expect_column_values_to_not_be_null": {},
+    "expect_column_values_to_be_in_set": {
+        "values": "list"
+    },
+    "expect_column_value_lengths_to_equal": {
+        "length": "int"
+    },
+    "expect_column_values_to_be_of_type": {
+        "type": "str"
+    },
+    "expect_column_values_to_be_between": {
+        "min_value": "int",
+        "max_value": "int"
+    },
+}
+SUPPORTED_GE_EXP_TYPES = [
+    "int",
+    "bool",
+    "float",
+    "str",
+]
 OUTDATED = "[OUTDATED] "

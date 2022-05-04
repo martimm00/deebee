@@ -5,8 +5,15 @@ import dash_uploader as du
 import dash_bootstrap_components as dbc
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
-from constants.great_expectations_constants import SUPPORTED_EXPECTATIONS
-from constants.layout_shortcut_constants import MAIN_COL_STYLE, CHECKLIST_DIV_STYLE
+from constants.great_expectations_constants import (
+    EXPECTATIONS_MAP,
+    SUPPORTED_GE_EXP_TYPES
+)
+from constants.layout_shortcut_constants import (
+    INPUT_STYLE,
+    MAIN_COL_STYLE,
+    CHECKLIST_DIV_STYLE
+)
 
 
 def create_layout(app: dash.Dash) -> dash.Dash:
@@ -307,15 +314,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                             html.H5("Name:"),
                             dcc.Input(
                                 id="expectation_set_name_input",
-                                style={
-                                    "height": "38px",
-                                    "width": "100%",
-                                    "border": "3px black solid",
-                                    "borderRadius": "20px",
-                                    "paddingLeft": "10px",
-                                    "paddingRight": "10px",
-                                    "marginBottom": "15px"
-                                }
+                                style=INPUT_STYLE
                             ),
                             html.H5("Table:"),
                             dcc.Dropdown(
@@ -338,10 +337,16 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     ),
                                     dbc.Col(
                                         [
-                                            dbc.Button(
-                                                "Delete",
-                                                id="delete_expectation_button",
-                                                color="danger"
+                                            html.Div(
+                                                [
+                                                    dbc.Button(
+                                                        "Delete",
+                                                        id="delete_expectation_button",
+                                                        color="danger"
+                                                    )
+                                                ],
+                                                id="delete_expectation_button_div",
+                                                style={"display": "none"}
                                             )
                                         ]
                                     )
@@ -392,21 +397,100 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                     ),
                     dbc.ModalBody(
                         [
-                            html.H3("Select an expectation:"),
+                            html.H5("Select an expectation:"),
                             dcc.Dropdown(
                                 id="supported_expectations_dropdown",
-                                options=SUPPORTED_EXPECTATIONS
+                                options=sorted(list(EXPECTATIONS_MAP.keys())),
+                                style={"marginBottom": "20px"}
                             ),
-                            html.H3("Select a column:"),
+                            html.H5("Select a column:"),
                             dcc.Dropdown(
                                 id="table_columns_dropdown",
-                                options=EMPTY_LIST
+                                options=EMPTY_LIST,
+                                style={"marginBottom": "20px"}
+                            ),
+                            html.Div(
+                                [
+                                    html.H5("Type"),
+                                    dcc.Dropdown(
+                                        id="type_exp_param_input",
+                                        options=SUPPORTED_GE_EXP_TYPES,
+                                        style={"marginBottom": "20px"}
+                                    )
+                                ],
+                                id="type_exp_param_div",
+                                style={"display": "none"}
+                            ),
+                            html.Div(
+                                [
+                                    html.H5("Length"),
+                                    dcc.Input(
+                                        id="length_exp_param_input",
+                                        style=INPUT_STYLE
+                                    )
+                                ],
+                                id="length_exp_param_div",
+                                style={"display": "none"}
+                            ),
+                            html.Div(
+                                [
+                                    html.H5("Values (v1,v2,...)"),
+                                    dcc.Input(
+                                        id="values_exp_param_input",
+                                        style=INPUT_STYLE
+                                    )
+                                ],
+                                id="values_exp_param_div",
+                                style={"display": "none"}
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.H5("Minimum value"),
+                                                    dcc.Input(
+                                                        id="min_value_exp_param_input",
+                                                        style=INPUT_STYLE
+                                                    )
+                                                ],
+                                                id="min_value_exp_param_div",
+                                                style={
+                                                    "display": "none",
+                                                    "textAlign": "center"
+                                                }
+                                            ),
+                                        ]
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.H5("Maximum value"),
+                                                    dcc.Input(
+                                                        id="max_value_exp_param_input",
+                                                        style=INPUT_STYLE
+                                                    )
+                                                ],
+                                                id="max_value_exp_param_div",
+                                                style={
+                                                    "display": "none",
+                                                    "textAlign": "center"
+                                                }
+                                            ),
+                                        ]
+                                    )
+                                ],
+                                justify="between",
+                                id="min_max_values_exp_param_div"
                             ),
                             dbc.ModalFooter(
                                 [
                                     dbc.Button(
                                         "Add",
-                                        id="add_expectation_button"
+                                        id="add_expectation_button",
+                                        color="secondary"
                                     ),
                                     dbc.Button(
                                         "Close",

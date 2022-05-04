@@ -3,6 +3,7 @@ from dash import Output, Input, State
 import dash_bootstrap_components as dbc
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
+from constants.great_expectations_constants import EXPECTATIONS_MAP, EXPECTATION_PARAMS
 
 from src.expectation_operations import is_expectation_set_name_valid
 from src.front_end_operations import (
@@ -182,7 +183,6 @@ def set_callbacks(app) -> dash.Dash:
         :param uploaded_file_names: List containing the name of the imported dataset.
         :param selected_datasets: List with names of datasets selected by the user.
         :param new_dataset_name: String with a new name for a dataset.
-        :param imported_datasets: Dictionary with objects of currently imported datasets.
 
         :return: List with updated checklist options, and empty list.
         """
@@ -327,12 +327,16 @@ def set_callbacks(app) -> dash.Dash:
         return style
 
     @app.callback(
-        Output("expectation_set_definer_modal", "is_open"),
+        [
+            Output("expectation_set_definer_modal", "is_open"),
+            Output("expectation_set_name_input", "value"),
+            Output("imported_datasets_dropdown", "value"),
+        ],
         Input("open_expectation_set_definer_button", "n_clicks"),
         State("expectation_set_definer_modal", "is_open"),
         prevent_initial_call=True
     )
-    def toggle_expectation_set_definer(open_modal: int, modal_state) -> bool:
+    def toggle_expectation_set_definer(open_modal: int, modal_state) -> (bool, str, str):
         """
         Opens the expectation set definer when the button is clicked.
 
@@ -341,7 +345,7 @@ def set_callbacks(app) -> dash.Dash:
 
         :return: Bool.
         """
-        return True
+        return True, EMPTY_STRING, EMPTY_STRING
 
     @app.callback(
         [
@@ -384,10 +388,14 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         Output("expectation_definer_modal", "is_open"),
-        Input("new_expectation_button", "n_clicks"),
+        [
+            Input("new_expectation_button", "n_clicks"),
+            Input("add_expectation_button", "n_clicks"),
+            Input("close_expectation_definer_button", "n_clicks")
+        ],
         [
             State("expectation_set_name_input", "value"),
-            State("imported_datasets_checklist", "value"),
+            State("imported_datasets_dropdown", "value"),
             State("expectation_sets_checklist", "options"),
             State("expectation_definer_modal", "is_open")
         ],
@@ -395,6 +403,8 @@ def set_callbacks(app) -> dash.Dash:
     )
     def toggle_expectation_definer(
         new_expectation: int,
+        add_expectation: int,
+        close_definer: int,
         set_name: str,
         dataset_name: str,
         current_sets: list,
@@ -405,6 +415,8 @@ def set_callbacks(app) -> dash.Dash:
         match.
 
         :param new_expectation: Number of clicks.
+        :param add_expectation: Number of clicks.
+        :param close_definer: Number of clicks.
         :param set_name: Current name typed by the user.
         :param dataset_name: Currently selected dataset or table.
         :param current_sets: List with currently available expectation sets.
@@ -412,26 +424,68 @@ def set_callbacks(app) -> dash.Dash:
 
         :return: Bool.
         """
-        if set_name not in current_sets and dataset_name:
-            if is_expectation_set_name_valid(set_name):
-                modal_state = True
+        if is_trigger("new_expectation_button"):
+            if set_name not in current_sets and dataset_name:
+                if is_expectation_set_name_valid(set_name):
+                    modal_state = True
+        else:
+            modal_state = False
         return modal_state
 
     @app.callback(
         [
+            Output("supported_expectations_dropdown", "value"),
+            Output("table_columns_dropdown", "value")
+        ],
+        [
+            Input("new_expectation_button", "n_clicks")
+        ]
+    )
+    def clear_dropdown_values_at_expectation_definer(new_expectation: int) -> (str, str):
+        """
+        Returns two empty strings to clear dropdown selections.
+        """
+        return EMPTY_STRING, EMPTY_STRING
+
+    @app.callback(
+        Output("table_columns_dropdown", "options"),
+        Input("imported_datasets_dropdown", "value")
+    )
+    def find_available_table_columns(dataset_name: str) -> list:
+        """
+        Finds table columns once the user selects one dataset to create expectations on.
+
+        :param dataset_name: String with the name of the selected dataset.
+
+        :return: List with dataset columns, but in case there is no selected dataset, it
+        returns an empty list.
+        """
+        table_columns = EMPTY_LIST
+        if dataset_name:
+            dataset_path = get_imported_dataset_path(dataset_name)
+            sep = infer_csv_separator(dataset_path)
+            table = read_dataset(dataset_path, n_rows=2, sep=sep)
+            table_columns = table.columns.tolist()
+        return table_columns
+
+    @app.callback(
+        [
             Output("expectations_checklist_div", "style"),
-            Output("no_expectations_div", "style")
+            Output("no_expectations_div", "style"),
+            Output("delete_expectation_button_div", "style")
         ],
         Input("expectations_checklist", "options"),
         [
             State("expectations_checklist_div", "style"),
-            State("no_expectations_div", "style")
+            State("no_expectations_div", "style"),
+            State("delete_expectation_button_div", "style")
         ]
     )
     def switch_expectations_listing_styles(
             current_expectations: list,
             checklist_div_style: dict,
-            no_expectations_div_style: dict
+            no_expectations_div_style: dict,
+            delete_expectations_div_style: dict
     ) -> (dict, dict):
         """
         Switches between two Div components, depending on whether there are imported
@@ -440,6 +494,7 @@ def set_callbacks(app) -> dash.Dash:
         :param current_expectations: List with the current dcc.Checklist options.
         :param checklist_div_style: Dictionary with the current style.
         :param no_expectations_div_style: Dictionary with the current style.
+        :param delete_expectations_div_style: Dictionary with the current style.
 
         :return: Dictionaries with updated styles
         """
@@ -447,13 +502,87 @@ def set_callbacks(app) -> dash.Dash:
         if is_list_empty(current_expectations):
             checklist_div_style = hide_component(checklist_div_style)
             no_expectations_div_style = display_component(no_expectations_div_style)
+            delete_expectations_div_style = hide_component(delete_expectations_div_style)
 
         # In case there are, hide the message and show the checklist
         else:
             checklist_div_style = display_component(checklist_div_style)
             no_expectations_div_style = hide_component(no_expectations_div_style)
+            delete_expectations_div_style = display_component(
+                delete_expectations_div_style
+            )
 
         # Returning updated styles
-        return checklist_div_style, no_expectations_div_style
+        return (
+            checklist_div_style,
+            no_expectations_div_style,
+            delete_expectations_div_style
+        )
+
+    @app.callback(
+        [
+            Output("type_exp_param_div", "style"),
+            Output("length_exp_param_div", "style"),
+            Output("values_exp_param_div", "style"),
+            Output("min_value_exp_param_div", "style"),
+            Output("max_value_exp_param_div", "style")
+        ],
+        [
+            Input("new_expectation_button", "n_clicks"),
+            Input("supported_expectations_dropdown", "value")
+        ],
+        [
+            State("type_exp_param_div", "style"),
+            State("length_exp_param_div", "style"),
+            State("values_exp_param_div", "style"),
+            State("min_value_exp_param_div", "style"),
+            State("max_value_exp_param_div", "style")
+        ],
+        prevent_initial_call=True
+    )
+    def show_expectation_parameter_inputs(
+            new_expectation: int,
+            selected_expectation: str,
+            type_div_style: dict,
+            length_div_style: dict,
+            values_div_style: dict,
+            min_value_div_style: dict,
+            max_value_div_style: dict,
+    ) -> (dict, dict, dict, dict):
+        """
+        Shows or hides Divs that are meant to be the input for expectation parameters.
+
+        :param new_expectation: Number of clicks.
+        :param selected_expectation: String with the expectation that the user selected.
+        :param type_div_style: Component style.
+        :param length_div_style: Component style.
+        :param values_div_style: Component style.
+        :param min_value_div_style: Component style.
+        :param max_value_div_style: Component style.
+
+        :return: Dictionaries with styles for the mentioned Divs.
+        """
+        params_map = {
+            "type": type_div_style,
+            "length": length_div_style,
+            "values": values_div_style,
+            "min_value": min_value_div_style,
+            "max_value": max_value_div_style
+        }
+
+        if is_trigger("new_expectation_button") or not selected_expectation:
+            expectation_params = EMPTY_LIST
+
+        else:
+            expectation_id = EXPECTATIONS_MAP[selected_expectation]
+            expectation_params = EXPECTATION_PARAMS[expectation_id]
+
+        for param in params_map:
+            if param in expectation_params:
+                params_map[param] = display_component(params_map[param])
+            else:
+                params_map[param] = hide_component(params_map[param])
+
+        return list(params_map.values())
 
     return app

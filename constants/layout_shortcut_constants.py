@@ -18,3 +18,12 @@ CHECKLIST_DIV_STYLE = {
     "borderRadius": "20px",
     "overflow": "scroll",
 }
+INPUT_STYLE = {
+    "height": "38px",
+    "width": "100%",
+    "border": "3px black solid",
+    "borderRadius": "20px",
+    "paddingLeft": "10px",
+    "paddingRight": "10px",
+    "marginBottom": "15px"
+}
