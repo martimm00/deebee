@@ -44,4 +44,4 @@ SUPPORTED_GE_EXP_TYPES = [
     "float",
     "str",
 ]
-OUTDATED = "[OUTDATED] "
+EXPECTATION_CONJUNCTION = "over"

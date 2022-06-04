@@ -4,7 +4,7 @@ import os
 class Table:
     def __init__(self, name: str, path: os.path) -> None:
         self._name = name if name and path else "test"
-        self._path = path if path and name else r"test"
+        self._path = path if path and name else "test"
 
     @property
     def name(self) -> str:

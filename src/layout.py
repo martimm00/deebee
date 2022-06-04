@@ -257,10 +257,34 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                             "display": "none"
                                         }
                                     ),
-                                    dbc.Button(
-                                        "Define expectations",
-                                        id="open_expectation_set_definer_button",
-                                        color="secondary"
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Button(
+                                                        "Define expectations",
+                                                        id="open_expectation_set_definer_button",
+                                                        color="secondary"
+                                                    )
+                                                ]
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            dbc.Button(
+                                                                "Delete expectations",
+                                                                id="delete_expectation_set_button",
+                                                                color="danger"
+                                                            ),
+                                                        ],
+                                                        id="delete_expectation_set_div",
+                                                        style={"display": "none"}
+                                                    )
+                                                ]
+                                            )
+                                        ],
+                                        justify="between"
                                     )
                                 ],
                                 style=MAIN_COL_STYLE
@@ -366,11 +390,10 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                 id="expectations_checklist_div",
                                 style={
                                     "marginTop": "20px",
-                                    "marginBottom": "20px",
                                     "padding": "25px",
                                     "paddingTop": "23px",
                                     "width": "100%",
-                                    "height": "30vh",
+                                    "height": "20vh",
                                     "backgroundColor": "#fff",
                                     "border": "3px black solid",
                                     "borderRadius": "20px",
@@ -383,7 +406,25 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     "Defined expectations will appear here."
                                 ],
                                 id="no_expectations_div",
-                                style={"marginTop": "20px", "textAlign": "center"}
+                                style={
+                                    "marginTop": "20px",
+                                    "textAlign": "center",
+                                    "marginBottom": "20px"
+                                }
+                            )
+                        ]
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Finish",
+                                id="finish_expectation_set_definition_button",
+                                color="secondary"
+                            ),
+                            dbc.Button(
+                                "Cancel",
+                                id="cancel_expectation_set_definition_button",
+                                color="secondary"
                             )
                         ]
                     )
@@ -510,9 +551,6 @@ def create_layout(app: dash.Dash) -> dash.Dash:
 
             # Auxiliary Divs
             html.Div(id="profile_report_output_div", style={"display": "none"}),
-
-            # Stores
-            dcc.Store("imported_datasets_store")
         ],
         style={
             "padding": "30px",

@@ -8,6 +8,7 @@ from constants.path_constants import (
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
     EXPECTATION_SUITES_PATH,
+    EXPECTATION_SUITES_CONFIG_PATH,
 )
 
 
@@ -198,6 +199,35 @@ def get_expectations_path() -> os.path:
     :return: Path.
     """
     return EXPECTATION_SUITES_PATH
+
+
+def get_expectations_config_path() -> os.path:
+    """
+    Returns the directory that contains configuration for all Expectation Suites.
+
+    :return: Path.
+    """
+    return EXPECTATION_SUITES_CONFIG_PATH
+
+
+def get_available_expectation_sets() -> list:
+    """
+    Returns a list with all the available expectation sets.
+
+    :return: List with available expectation sets.
+    """
+    expectations_config_path = get_expectations_config_path()
+    return [f for f in os.listdir(expectations_config_path) if ".json" in f]
+
+
+def get_expectation_set_config_path(expectation_set_name: str) -> os.path:
+    """
+    Returns the path of the config of the given expectation set.
+
+    :return: Path.
+    """
+    expectations_config_path = get_expectations_config_path()
+    return join_paths(expectations_config_path, expectation_set_name + ".json")
 
 
 def get_validations_path() -> os.path:
