@@ -17,8 +17,8 @@ from constants.path_constants import (
     IMPORT_DIRECTORY_PATH,
     GREAT_EXPECTATIONS_DIR,
     GREAT_EXPECTATIONS_PATH,
-    EXPECTATION_SUITES_PATH,
-    VALIDATION_RESULTS_PATH,
+    EXPECTATION_SUITES_DIR,
+    VALIDATION_RESULTS_DIR,
 )
 
 
@@ -27,8 +27,8 @@ def make_sure_dirs_exist() -> None:
     Can create the three directories in case they do not exist.
     """
     data_path = DATA_DIRECTORY
-    expectations_path = EXPECTATION_SUITES_PATH
-    validations_path = VALIDATION_RESULTS_PATH
+    expectations_path = EXPECTATION_SUITES_DIR
+    validations_path = VALIDATION_RESULTS_DIR
     imports_path = IMPORT_DIRECTORY_PATH
 
     # If the path does not exist, create it

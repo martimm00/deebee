@@ -5,7 +5,7 @@ from great_expectations.checkpoint import LegacyCheckpoint
 from constants.defaults import EMPTY_STRING
 from constants.warning_constants import WARNING_MESSAGES
 from constants.great_expectations_constants import OUTDATED
-from constants.path_constants import EXPECTATION_SUITES_PATH
+from constants.path_constants import EXPECTATION_SUITES_DIR
 
 from src.json_operations import from_json
 from src.objects import ExpectationSuiteName
@@ -184,7 +184,7 @@ def get_validation_result_json_path(validation_html: str) -> str:
     validations_folder = get_validations_path()
 
     # Getting validation result file to be exported
-    expectation_suite_folder = EXPECTATION_SUITES_PATH  # EXPECTATION_SUITE_NAME_DIR
+    expectation_suite_folder = EXPECTATION_SUITES_DIR  # EXPECTATION_SUITE_NAME_DIR
     expectation_suite_name = get_directory_name(
         get_directory_path(get_directory_path(get_directory_path(validation_html)))
     )

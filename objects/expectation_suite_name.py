@@ -1,4 +1,4 @@
-from constants.path_constants import EXPECTATION_SUITES_PATH
+from constants.path_constants import EXPECTATION_SUITES_DIR
 
 
 class ExpectationSuiteName:
@@ -8,7 +8,7 @@ class ExpectationSuiteName:
         :param name: String with name set by the
         user.
         """
-        self._directory = EXPECTATION_SUITES_PATH
+        self._directory = EXPECTATION_SUITES_DIR
         self._name = name
         self._ge_name = self._build_ge_name()
 

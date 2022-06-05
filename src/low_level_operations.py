@@ -7,7 +7,7 @@ from constants.path_constants import (
     PROFILE_REPORTS_PATH,
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
-    EXPECTATION_SUITES_PATH,
+    EXPECTATION_SUITES_DIR,
     EXPECTATION_SUITES_CONFIG_PATH,
 )
 
@@ -198,7 +198,7 @@ def get_expectations_path() -> os.path:
 
     :return: Path.
     """
-    return EXPECTATION_SUITES_PATH
+    return EXPECTATION_SUITES_DIR
 
 
 def get_expectations_config_path() -> os.path:
@@ -375,7 +375,10 @@ def move(origin: os.path, destination: os.path) -> None:
     :param origin: Origin path.
     :param destination: Destination path.
     """
-    shutil.move(origin, destination)
+    try:
+        shutil.move(origin, destination)
+    except shutil.Error as m:
+        print("ERROR:", m)
 
 
 def rename(directory: os.path, old_name: str, new_name: str) -> None:

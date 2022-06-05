@@ -8,11 +8,14 @@ from great_expectations.cli.pretty_printing import cli_message
 from great_expectations.exceptions import DataContextError, DatasourceInitializationError
 
 from src.low_level_operations import make_dir, exists_path, join_paths, get_absolute_path
+
 from constants.path_constants import (
+    DATA_DIRECTORY,
     IMPORT_DIRECTORY_PATH,
     GREAT_EXPECTATIONS_DIR,
-    EXPECTATION_SUITES_PATH,
-    VALIDATION_RESULTS_PATH,
+    EXPECTATION_SUITES_DIR,
+    VALIDATION_RESULTS_DIR,
+    PATH_FOR_GE_STORES_CONFIG
 )
 
 
@@ -93,10 +96,10 @@ def change_storage_paths(target_directory: os.path) -> None:
     # Changing paths
     yaml["stores"]["expectations_store"]["store_backend"][
         "base_directory"
-    ] = EXPECTATION_SUITES_PATH
+    ] = PATH_FOR_GE_STORES_CONFIG
     yaml["stores"]["validations_store"]["store_backend"][
         "base_directory"
-    ] = VALIDATION_RESULTS_PATH
+    ] = PATH_FOR_GE_STORES_CONFIG
 
     # Writing back the updated YML to a file
     with open(path_to_yaml, "w") as stream:
@@ -131,10 +134,10 @@ def get_ge_file_system_ready(ge_dir: os.path, target_directory: os.path) -> None
         check_for_inconsistencies(ge_dir, target_directory)
     else:
         create_file_system(target_directory)
-    if not exists_path(EXPECTATION_SUITES_PATH):
-        make_dir(EXPECTATION_SUITES_PATH)
-    if not exists_path(VALIDATION_RESULTS_PATH):
-        make_dir(VALIDATION_RESULTS_PATH)
+    if not exists_path(EXPECTATION_SUITES_DIR):
+        make_dir(EXPECTATION_SUITES_DIR)
+    if not exists_path(VALIDATION_RESULTS_DIR):
+        make_dir(VALIDATION_RESULTS_DIR)
 
 
 def initialize() -> None:
@@ -143,10 +146,9 @@ def initialize() -> None:
     notebooks, creates a project file, and appends to a .gitignore file.
     """
     data_path = IMPORT_DIRECTORY_PATH
-    directory = toolkit.parse_cli_config_file_location(
-        config_file_location=data_path
-    ).get("directory")
-    target_directory = get_absolute_path(directory)
+    toolkit.parse_cli_config_file_location(config_file_location=data_path)
+
+    target_directory = get_absolute_path(DATA_DIRECTORY)
     ge_dir = get_full_path_to_ge_dir(target_directory)
 
     get_ge_file_system_ready(ge_dir, target_directory)

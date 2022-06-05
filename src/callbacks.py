@@ -1,8 +1,11 @@
 import dash
 import json
+import great_expectations as ge
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
 
+from constants.path_constants import GREAT_EXPECTATIONS_PATH
+from objects.expectation_suite_name import ExpectationSuiteName
 from constants.defaults import EMPTY_LIST, EMPTY_DICT, EMPTY_STRING
 from constants.great_expectations_constants import (
     EXPECTATIONS_MAP,
@@ -12,6 +15,7 @@ from constants.great_expectations_constants import (
 )
 
 from src.expectation_operations import is_expectation_set_name_valid
+from src.expectation_suite_operations import create_ge_expectation_suite
 from src.front_end_operations import (
     is_trigger,
     hide_component,
@@ -50,6 +54,17 @@ from src.low_level_operations import (
 
 
 def set_callbacks(app) -> dash.Dash:
+    """
+    Defines all callback functions for the app.
+
+    :param app: Dash object whose callbacks need to be configured.
+
+    :return: Dash object with configured callbacks.
+    """
+
+    ge_context = ge.data_context.DataContext(
+        context_root_dir=GREAT_EXPECTATIONS_PATH
+    )
 
     @app.callback(
         [
@@ -374,6 +389,9 @@ def set_callbacks(app) -> dash.Dash:
         :return: Bool.
         """
         is_open = False
+
+        if is_trigger("finish_expectation_set_definition_button"):
+            create_ge_expectation_suite(ge_context, ExpectationSuiteName(set_name))
 
         # If the modal has to be opened, then change the output
         if is_trigger("open_expectation_set_definer_button"):

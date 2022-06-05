@@ -64,7 +64,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                         style={
                                             "width": "100%",
                                             "display": "inline-block",
-                                            "marginTop": "20px",
+                                            "marginTop": "15px",
                                             "marginBottom": "20px",
                                             "border": "3px black solid",
                                             "borderRadius": "20px",
@@ -279,7 +279,10 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                             ),
                                                         ],
                                                         id="delete_expectation_set_div",
-                                                        style={"display": "none"}
+                                                        style={
+                                                            "display": "none",
+                                                            "textAlign": "right"
+                                                        }
                                                     )
                                                 ]
                                             )
@@ -293,6 +296,11 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                 [
                                     html.H1(
                                         "Validate"
+                                    ),
+                                    dcc.Dropdown(
+                                        EMPTY_LIST,
+                                        id="validation_dropdown",
+                                        style={"marginTop": "20px"}
                                     )
                                 ],
                                 style=MAIN_COL_STYLE

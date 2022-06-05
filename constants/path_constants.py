@@ -10,9 +10,9 @@ PROFILE_REPORTS_PATH = r"profile_reports"
 HIDE_COMPONENT = {"display": "none"}
 GREAT_EXPECTATIONS_DIR = r"great_expectations"
 GREAT_EXPECTATIONS_PATH = os.path.join(DATA_DIRECTORY, GREAT_EXPECTATIONS_DIR)
-EXPECTATION_SUITES_PATH = r"expectation_suites"
+EXPECTATION_SUITES_DIR = r"expectation_suites"
 EXPECTATION_SUITES_CONFIG_PATH = r"expectation_suites_config"
-VALIDATION_RESULTS_PATH = r"validation_results"
+VALIDATION_RESULTS_DIR = r"validation_results"
 LOCAL_SITE = os.path.join(
     *[
         DATA_DIRECTORY,
@@ -23,3 +23,5 @@ LOCAL_SITE = os.path.join(
         "validations",
     ]
 )
+
+PATH_FOR_GE_STORES_CONFIG = "../../"
