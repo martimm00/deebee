@@ -745,13 +745,18 @@ def set_callbacks(app) -> dash.Dash:
         return parsed_param
 
     def write_expectation_in_config(
-        expectation_set_name: str, expectation_id: str, parameters_dict: dict
+        expectation_set_name: str,
+        column_name: str,
+        expectation_id: str,
+        parameters_dict: dict
     ) -> None:
         """
         This function creates a new file to write down a configuration for an expectation
         set, or opens a created file to append new expectations and their parameters.
 
         :param expectation_set_name: String with the name of the expectation set.
+        :param column_name: String with the name of the selected table column, where the
+        expectation will have to be applied to.
         :param expectation_id: String with the name of the new expectation to be added.
         :param parameters_dict: Dictionary with parameters of this new expectation.
         """
@@ -762,27 +767,36 @@ def set_callbacks(app) -> dash.Dash:
         with open(expectation_set_path, "r") as fp:
             config_dict = json.load(fp)
 
-        config_dict[expectation_id] = parameters_dict
+        if column_name not in config_dict:
+            config_dict[column_name] = dict()
+
+        config_dict[column_name][expectation_id] = parameters_dict
 
         with open(expectation_set_path, "w") as fp:
             json.dump(config_dict, fp)
 
     def delete_expectation_in_config(
-        expectation_set_name: str, expectation_ids: list
+        expectation_set_name: str, column_names: list, expectation_ids: list
     ) -> None:
         """
         This function creates a new file to write down a configuration for an expectation
         set, or opens a created file to append new expectations and their parameters.
 
         :param expectation_set_name: String with the name of the expectation set.
+        :param column_names: List with column names.
         :param expectation_ids: List with names of expectations to be deleted.
         """
         expectation_set_config_path = get_expectation_set_path(expectation_set_name)
         with open(expectation_set_config_path, "r") as fp:
             config_dict = json.load(fp)
 
-        for expectation_id in expectation_ids:
-            del config_dict[expectation_id]
+        # Deleting all expectations from configuration
+        for column_name, expectation_id in zip(column_names, expectation_ids):
+            del config_dict[column_name][expectation_id]
+
+            # If that column has no expectations, delete it from configuration
+            if not config_dict[column_name]:
+                del config_dict[column_name]
 
         with open(expectation_set_config_path, "w") as fp:
             json.dump(config_dict, fp)
@@ -864,7 +878,7 @@ def set_callbacks(app) -> dash.Dash:
                         all_params_are_set = False
             if all_params_are_set:
                 write_expectation_in_config(
-                    expectation_set_name, expectation_id, params_of_interest
+                    expectation_set_name, selected_table_column, expectation_id, params_of_interest
                 )
                 expectation_interface_name = build_expectation_interface_name(
                     selected_expectation_name, selected_table_column
@@ -872,8 +886,12 @@ def set_callbacks(app) -> dash.Dash:
                 current_expectations.append(expectation_interface_name)
 
         elif is_trigger("delete_expectation_button"):
+            column_names = list()
             expectation_ids = list()
             for interface_name in selected_expectations:
+
+                # Getting column names where expectations are set at
+                column_names.append(interface_name.split(" ")[-1])
 
                 # Getting the expectations to be removed
                 expectation_ids.append(EXPECTATIONS_MAP[" ".join(interface_name.split(" ")[:-2])])
@@ -882,7 +900,7 @@ def set_callbacks(app) -> dash.Dash:
                 current_expectations.remove(interface_name)
 
             # Finally, deleting selected expectations in configuration
-            delete_expectation_in_config(expectation_set_name, expectation_ids)
+            delete_expectation_in_config(expectation_set_name, column_names, expectation_ids)
 
         return current_expectations
 
