@@ -1,5 +1,4 @@
 import dash
-import json
 import great_expectations as ge
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
@@ -17,6 +16,11 @@ from objects.expectation_suite_name import ExpectationSuiteName
 
 from src.expectation_operations import is_expectation_set_name_valid
 from src.expectation_suite_operations import create_ge_expectation_suite
+from src.expectation_set_operations import (
+    write_expectation_in_config,
+    delete_expectation_in_config,
+    check_existing_expectation_sets_integrity
+)
 from src.front_end_operations import (
     is_trigger,
     hide_component,
@@ -444,31 +448,6 @@ def set_callbacks(app) -> dash.Dash:
         # Returning updated styles
         return checklist_div_style, no_sets_div_style, display_delete_button
 
-    def check_all_expectation_sets_are_not_empty() -> None:
-        """
-        This function checks that no defined set is empty. If it is, it will be removed.
-        """
-        # Getting the name of all sets
-        expectation_sets = get_available_expectation_sets()
-        for set_name in expectation_sets:
-
-            # Getting the path of each set
-            expectation_set_path = get_expectation_set_path(set_name)
-            with open(expectation_set_path, "r") as fp:
-                content = json.load(fp)
-
-            # If there is no content, then that is an empty expectation set. Let's delete
-            # it
-            if not content:
-                delete_file(expectation_set_path)
-
-    def check_existing_expectation_sets_integrity() -> None:
-        """
-        Responsible for checking all listed expectation sets are valid.
-        """
-        # Check they are not empty
-        check_all_expectation_sets_are_not_empty()
-
     @app.callback(
         [
             Output("expectation_sets_checklist", "options"),
@@ -744,63 +723,6 @@ def set_callbacks(app) -> dash.Dash:
                 pass
         return parsed_param
 
-    def write_expectation_in_config(
-        expectation_set_name: str,
-        column_name: str,
-        expectation_id: str,
-        parameters_dict: dict
-    ) -> None:
-        """
-        This function creates a new file to write down a configuration for an expectation
-        set, or opens a created file to append new expectations and their parameters.
-
-        :param expectation_set_name: String with the name of the expectation set.
-        :param column_name: String with the name of the selected table column, where the
-        expectation will have to be applied to.
-        :param expectation_id: String with the name of the new expectation to be added.
-        :param parameters_dict: Dictionary with parameters of this new expectation.
-        """
-        expectation_set_path = get_expectation_set_path(expectation_set_name)
-        if not exists_path(expectation_set_path):
-            with open(expectation_set_path, "w") as fp:
-                json.dump(EMPTY_DICT, fp)
-        with open(expectation_set_path, "r") as fp:
-            config_dict = json.load(fp)
-
-        if column_name not in config_dict:
-            config_dict[column_name] = dict()
-
-        config_dict[column_name][expectation_id] = parameters_dict
-
-        with open(expectation_set_path, "w") as fp:
-            json.dump(config_dict, fp)
-
-    def delete_expectation_in_config(
-        expectation_set_name: str, column_names: list, expectation_ids: list
-    ) -> None:
-        """
-        This function creates a new file to write down a configuration for an expectation
-        set, or opens a created file to append new expectations and their parameters.
-
-        :param expectation_set_name: String with the name of the expectation set.
-        :param column_names: List with column names.
-        :param expectation_ids: List with names of expectations to be deleted.
-        """
-        expectation_set_config_path = get_expectation_set_path(expectation_set_name)
-        with open(expectation_set_config_path, "r") as fp:
-            config_dict = json.load(fp)
-
-        # Deleting all expectations from configuration
-        for column_name, expectation_id in zip(column_names, expectation_ids):
-            del config_dict[column_name][expectation_id]
-
-            # If that column has no expectations, delete it from configuration
-            if not config_dict[column_name]:
-                del config_dict[column_name]
-
-        with open(expectation_set_config_path, "w") as fp:
-            json.dump(config_dict, fp)
-
     def build_expectation_interface_name(expectation_name: str, column_name: str) -> str:
         """
         Builds expectation interface name from expectation name and column name.
@@ -850,7 +772,7 @@ def set_callbacks(app) -> dash.Dash:
         max_value_input: str,
     ) -> (list, dict):
         if is_trigger("open_expectation_set_definer_button"):
-            current_expectations = EMPTY_LIST
+            current_expectations = list()
         elif is_trigger("add_expectation_button"):
             params_map = {
                 "type": type_input,
@@ -928,7 +850,7 @@ def set_callbacks(app) -> dash.Dash:
                     and list_has_one_item(selected_expectation_sets):
                 dataset_name = get_value(selected_datasets)
                 expectation_set_name = get_value(selected_expectation_sets)
-                create_ge_expectation_suite(
+                validate_dataset(
                     ge_context, ExpectationSuiteName(expectation_set_name)
                 )
 

@@ -1,78 +1,57 @@
-from src.expectation_parameters import requires_parameters, get_number_of_arguments_required
+import json
+
+from objects.expectation_suite_name import ExpectationSuiteName
+
+from constants.expectation_set_constants import PARAMETERS, EXPECTATIONS, EXPECTATION_NAME
+
+from src.batch_operations import get_ge_batch
+from src.expectation_suite_operations import create_empty_ge_expectation_suite
+from src.low_level_operations import get_imported_dataset_path, get_expectation_set_path
 
 
-def compute_results(
-    expectations_ids: dict, expectation_and_columns: dict, batch
+def apply_expectation_to_dataset(
+    batch, column_name: str, expectation_config: dict
 ) -> None:
     """
-    This function is used to compute validation results when applying
-    an Expectation Suite to a dataset.
-    :param expectations_ids: String with great_expectations
-    expectation names.
-    :param expectation_and_columns: Dictionary that contains all
-    currently defined expectations, the columns where they have to
-    be applied and their params (if any).
-    :param batch: great_expectations data batch object.
-    :return: String with warning message.
+    Applies individual expectations to the batch.
+
+    :param batch: GE's batch object.
+    :param column_name: String with the name of the column where the expectation has to
+    be applied.
+    :param expectation_config: Dictionary that provides configuration for the expectation
+    itself, that comes in the format of expectation set configuration.
     """
-    compute_results_by_expectation_type(
-        expectation_and_columns, expectations_ids
+    expectation_id = expectation_config.get(EXPECTATION_NAME)
+    parameters = expectation_config.get(PARAMETERS)
+    parameters["column"] = column_name
+
+    getattr(batch, expectation_id)(**parameters)
+
+
+def validate_dataset(context, dataset_name: str, expectation_set_name: str) -> None:
+    """
+    This function is used to compute validation results when applying an Expectation
+    Suite to a dataset.
+
+    :param context: GE's context object.
+    :param dataset_name: String with the name of the dataset to be validated.
+    :param expectation_set_name: Expectation set name.
+    """
+    dataset_path = get_imported_dataset_path(dataset_name)
+
+    expectation_set_path = get_expectation_set_path(expectation_set_name)
+    with open(expectation_set_path, "r") as fp:
+        config = json.load(fp)
+    expectations_from_set_config = config.get(EXPECTATIONS)
+
+    expectation_suite = create_empty_ge_expectation_suite(
+        context, ExpectationSuiteName(expectation_set_name)
     )
+    batch = get_ge_batch(context, expectation_suite, dataset_path)
+
+    for column_name in expectations_from_set_config:
+        for expectation_config in expectations_from_set_config.get(column_name):
+            apply_expectation_to_dataset(batch, column_name, expectation_config)
 
     # Saving Expectation Suite to JSON file
     batch.save_expectation_suite(discard_failed_expectations=False)
-
-
-def compute_results_by_expectation_type(
-    expectation_and_columns: dict, expectations_ids: dict
-) -> None:
-    """
-    This function is used to compute validation results when applying
-    an Expectation Suite to a dataset, by expectation type.
-    :param expectation_and_columns: Dictionary that contains all
-    currently defined expectations, the columns where they have to
-    be applied and their params (if any).
-    :param expectations_ids: String with great_expectations
-    expectation names.
-    :return: String with warning message.
-    """
-    for expectation_name in expectation_and_columns:
-        compute_result_for_each_expectation(
-            expectation_and_columns[expectation_name],
-            expectation_name,
-            expectations_ids,
-        )
-
-
-def compute_result_for_each_expectation(
-    expectation_type_dict: dict,
-    expectation_name: str,
-    expectations_ids: dict,
-) -> None:
-    """
-    This function is used to compute validation results when applying
-    an Expectation Suite to a dataset, one expectation at a time.
-    :param expectation_type_dict: Dictionary that contains all
-    currently defined expectations, the columns where they have to be
-    applied and their params (if any).
-    :param expectation_name: String with expectation name.
-    :param expectations_ids: String with great_expectations
-    expectation names.
-    :return: String with warning message.
-    """
-    for column in expectation_type_dict:
-        parameters = expectation_type_dict[column]
-
-        # If the expectation requires any parameters
-        if requires_parameters(expectation_name):
-
-            # Getting the number of parameters to be read
-            required_argument_count = get_number_of_arguments_required(expectation_name)
-            if required_argument_count == 1:
-                expectations_ids[expectation_name](column, parameters)
-            elif required_argument_count == 2:
-                value1, value2 = parameters
-                expectations_ids[expectation_name](column, value1, value2)
-        else:
-            getattr(batch, expectation_id)
-            expectations_ids[expectation_name](column)
