@@ -9,16 +9,16 @@ from src.low_level_operations import (
     move,
     make_dir,
     exists_path,
-    system_call,
+    system_call
 )
 from constants.path_constants import (
     LOCALHOST,
     DATA_DIRECTORY,
     IMPORT_DIRECTORY_PATH,
+    EXPECTATION_SETS_PATH,
     GREAT_EXPECTATIONS_DIR,
     GREAT_EXPECTATIONS_PATH,
-    EXPECTATION_SUITES_DIR,
-    VALIDATION_RESULTS_DIR,
+    VALIDATION_RESULTS_PATH,
 )
 
 
@@ -27,8 +27,8 @@ def make_sure_dirs_exist() -> None:
     Can create the three directories in case they do not exist.
     """
     data_path = DATA_DIRECTORY
-    expectations_path = EXPECTATION_SUITES_DIR
-    validations_path = VALIDATION_RESULTS_DIR
+    expectations_path = EXPECTATION_SETS_PATH
+    validations_path = VALIDATION_RESULTS_PATH
     imports_path = IMPORT_DIRECTORY_PATH
 
     # If the path does not exist, create it
@@ -47,7 +47,7 @@ def make_sure_dirs_exist() -> None:
 
 def repair_ge_file_system(path: os.path) -> None:
     """
-    Changes the path of Great Expectations directory to repair the file system.
+    Changes the path of Great Expectations' directory to repair the file system.
 
     :param path: The new path.
     """

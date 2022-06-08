@@ -5,7 +5,6 @@ from dash import Output, Input, State
 import dash_bootstrap_components as dbc
 
 from constants.path_constants import GREAT_EXPECTATIONS_PATH
-from objects.expectation_suite_name import ExpectationSuiteName
 from constants.defaults import EMPTY_LIST, EMPTY_DICT, EMPTY_STRING
 from constants.great_expectations_constants import (
     EXPECTATIONS_MAP,
@@ -13,6 +12,8 @@ from constants.great_expectations_constants import (
     SUPPORTED_GE_EXP_TYPES,
     EXPECTATION_CONJUNCTION
 )
+
+from objects.expectation_suite_name import ExpectationSuiteName
 
 from src.expectation_operations import is_expectation_set_name_valid
 from src.expectation_suite_operations import create_ge_expectation_suite
@@ -40,10 +41,12 @@ from src.low_level_operations import (
     has_extension,
     is_dataset_name,
     get_import_dir_path,
+    get_validations_path,
     is_profile_report_name,
     get_profile_report_path,
     get_profile_reports_path,
     get_imported_dataset_path,
+    get_validation_file_names,
     get_uploaded_dataset_path,
     get_imported_dataset_names,
     is_profile_report_available,
@@ -364,7 +367,7 @@ def set_callbacks(app) -> dash.Dash:
         ],
         [
             Input("open_expectation_set_definer_button", "n_clicks"),
-            Input("finish_expectation_set_definition_button", "n_clicks"),
+            Input("confirm_expectation_set_definition_button", "n_clicks"),
             Input("cancel_expectation_set_definition_button", "n_clicks")
         ],
         [
@@ -389,9 +392,6 @@ def set_callbacks(app) -> dash.Dash:
         :return: Bool.
         """
         is_open = False
-
-        if is_trigger("finish_expectation_set_definition_button"):
-            create_ge_expectation_suite(ge_context, ExpectationSuiteName(set_name))
 
         # If the modal has to be opened, then change the output
         if is_trigger("open_expectation_set_definer_button"):
@@ -450,7 +450,7 @@ def set_callbacks(app) -> dash.Dash:
             Output("expectation_sets_checklist", "value")
         ],
         [
-            Input("finish_expectation_set_definition_button", "n_clicks"),
+            Input("confirm_expectation_set_definition_button", "n_clicks"),
             Input("delete_expectation_set_button", "n_clicks")
         ],
         State("expectation_sets_checklist", "value")
@@ -729,17 +729,22 @@ def set_callbacks(app) -> dash.Dash:
         :param expectation_id: String with the name of the new expectation to be added.
         :param parameters_dict: Dictionary with parameters of this new expectation.
         """
-        expectation_set_config_path = get_expectation_set_config_path(expectation_set_name)
-        if not exists_path(expectation_set_config_path):
-            with open(expectation_set_config_path, "w") as fp:
+        expectation_set_path = get_expectation_set_config_path(expectation_set_name)
+        if not exists_path(expectation_set_path):
+            print("path not exists")
+            with open(expectation_set_path, "w") as fp:
+                print("CONTENT OF EMPTY_DICT:", json.dumps(EMPTY_DICT))
                 json.dump(EMPTY_DICT, fp)
-        with open(expectation_set_config_path, "r") as fp:
+        with open(expectation_set_path, "r") as fp:
             config_dict = json.load(fp)
 
-        print(config_dict)
+        print("CONFIG_DICT BEFORE ADD", config_dict)
+
         config_dict[expectation_id] = parameters_dict
 
-        with open(expectation_set_config_path, "w") as fp:
+        print("CONFIG_DICT AFTER ADD", config_dict)
+
+        with open(expectation_set_path, "w") as fp:
             json.dump(config_dict, fp)
 
     def delete_expectation_in_config(
@@ -821,24 +826,30 @@ def set_callbacks(app) -> dash.Dash:
                 "max_value": max_value_input
             }
             all_params_are_set = True
-            if is_trigger("add_expectation_button"):
-                expectation_id = EXPECTATIONS_MAP[selected_expectation_name]
-                expectation_params = EXPECTATION_PARAMS[expectation_id]
 
-                params_of_interest = EMPTY_DICT
-                for param in expectation_params:
-                    parsed_param = parse_parameter(param, params_map[param])
-                    params_of_interest[param] = parsed_param
-                    if parsed_param is None:
+            expectation_id = EXPECTATIONS_MAP[selected_expectation_name]
+            expectation_params = EXPECTATION_PARAMS[expectation_id]
+
+            params_of_interest = dict()
+            for param in expectation_params:
+                parsed_param = parse_parameter(param, params_map[param])
+                params_of_interest[param] = parsed_param
+                if parsed_param is None:
+                    all_params_are_set = False
+
+                # Expectation will not be added if min value is greater than max
+                # value
+                if "min_value" in params_of_interest and "max_value" in params_of_interest:
+                    if params_of_interest["min_value"] > params_of_interest["max_value"]:
                         all_params_are_set = False
-                if all_params_are_set:
-                    write_expectation_in_config(
-                        expectation_set_name, expectation_id, params_of_interest
-                    )
-                    expectation_interface_name = build_expectation_interface_name(
-                        selected_expectation_name, selected_table_column
-                    )
-                    current_expectations.append(expectation_interface_name)
+            if all_params_are_set:
+                write_expectation_in_config(
+                    expectation_set_name, expectation_id, params_of_interest
+                )
+                expectation_interface_name = build_expectation_interface_name(
+                    selected_expectation_name, selected_table_column
+                )
+                current_expectations.append(expectation_interface_name)
 
         elif is_trigger("delete_expectation_button"):
             expectation_ids = [
@@ -848,5 +859,74 @@ def set_callbacks(app) -> dash.Dash:
             delete_expectation_in_config(expectation_set_name, expectation_ids)
 
         return current_expectations
+
+    @app.callback(
+        Output("validation_dropdown", "options"),
+        [
+            Input("validate_dataset_button", "n_clicks"),
+            Input("delete_validations_button", "n_clicks")
+        ],
+        [
+            State("imported_datasets_checklist", "value"),
+            State("expectation_sets_checklist", "value")
+        ]
+    )
+    def update_validation_listing(
+        validate: int,
+        delete_validations: int,
+        selected_datasets: list,
+        selected_expectation_sets: list
+    ) -> list:
+        validations_path = get_validations_path()
+
+        if is_trigger("validate_dataset_button"):
+            if list_has_one_item(selected_datasets)\
+                    and list_has_one_item(selected_expectation_sets):
+                dataset_name = get_value(selected_datasets)
+                expectation_set_name = get_value(selected_expectation_sets)
+                create_ge_expectation_suite(
+                    ge_context, ExpectationSuiteName(expectation_set_name)
+                )
+
+        elif is_trigger("delete_validations_button"):
+            current_validations = get_validation_file_names()
+            for validation_name in current_validations:
+                validation_path = join_paths(validations_path, validation_name)
+                delete_file(validation_path)
+
+        return get_validation_file_names()
+
+    @app.callback(
+        Output("delete_validations_div", "style"),
+        [
+            Input("validate_dataset_button", "n_clicks"),
+            Input("delete_validations_button", "n_clicks")
+        ],
+        [
+            State("delete_validations_div", "style"),
+            State("validation_dropdown", "options")
+        ]
+    )
+    def toggle_delete_validations_div(
+        make_validation: int,
+        delete_validations: int,
+        div_style: dict,
+        current_validations: list
+    ) -> dict:
+        """
+        Displays or hides button to delete all validations, depending on whether there
+        are any validations to be deleted or not.
+
+        :param div_style: Dictionary with current style of the Div containing the delete
+        button.
+        :param current_validations: List with currently available validations.
+
+        :return: Dictionary with updated style.
+        """
+        if is_list_empty(current_validations):
+            div_style = hide_component(div_style)
+        else:
+            div_style = display_component(div_style)
+        return div_style
 
     return app

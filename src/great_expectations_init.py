@@ -14,7 +14,7 @@ from constants.path_constants import (
     IMPORT_DIRECTORY_PATH,
     GREAT_EXPECTATIONS_DIR,
     EXPECTATION_SUITES_DIR,
-    VALIDATION_RESULTS_DIR,
+    VALIDATION_RESULTS_PATH,
     PATH_FOR_GE_STORES_CONFIG
 )
 
@@ -94,9 +94,6 @@ def change_storage_paths(target_directory: os.path) -> None:
         yaml = load(stream, Loader=Loader)
 
     # Changing paths
-    yaml["stores"]["expectations_store"]["store_backend"][
-        "base_directory"
-    ] = PATH_FOR_GE_STORES_CONFIG
     yaml["stores"]["validations_store"]["store_backend"][
         "base_directory"
     ] = PATH_FOR_GE_STORES_CONFIG
@@ -136,8 +133,8 @@ def get_ge_file_system_ready(ge_dir: os.path, target_directory: os.path) -> None
         create_file_system(target_directory)
     if not exists_path(EXPECTATION_SUITES_DIR):
         make_dir(EXPECTATION_SUITES_DIR)
-    if not exists_path(VALIDATION_RESULTS_DIR):
-        make_dir(VALIDATION_RESULTS_DIR)
+    if not exists_path(VALIDATION_RESULTS_PATH):
+        make_dir(VALIDATION_RESULTS_PATH)
 
 
 def initialize() -> None:

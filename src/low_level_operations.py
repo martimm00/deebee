@@ -3,12 +3,12 @@ import shutil
 
 from constants.supported_constants import SUPPORTED_DATASET_TYPES
 from constants.path_constants import (
-    LOCAL_SITE,
     PROFILE_REPORTS_PATH,
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
+    EXPECTATION_SETS_PATH,
     EXPECTATION_SUITES_DIR,
-    EXPECTATION_SUITES_CONFIG_PATH,
+    VALIDATION_RESULTS_PATH,
 )
 
 
@@ -134,6 +134,17 @@ def is_excel_file_by_name(name: str) -> bool:
     return any([ends_with("." + ending, name) for ending in ["xlsx", "XLSX"]])
 
 
+def is_validation_name(name: str) -> bool:
+    """
+    Returns if the given name belongs to a validation file.
+
+    :param name: String with a filename.
+
+    :return: Bool.
+    """
+    return ends_with(".json", name)
+
+
 def get_imported_dataset_names() -> list:
     """
     Returns the names of all uploaded datasets from the upload path.
@@ -143,6 +154,20 @@ def get_imported_dataset_names() -> list:
     upload_dir_path = get_import_dir_path()
     return [
         d for d in get_elements_inside_directory(upload_dir_path) if is_dataset_name(d)
+    ]
+
+
+def get_validation_file_names() -> list:
+    """
+    Returns the names of all available validation files.
+
+    :return: List with the names of all validation files.
+    """
+    validations_path = get_validations_path()
+    return [
+        n
+        for n in get_elements_inside_directory(validations_path)
+        if is_validation_name(n)
     ]
 
 
@@ -207,7 +232,7 @@ def get_expectations_config_path() -> os.path:
 
     :return: Path.
     """
-    return EXPECTATION_SUITES_CONFIG_PATH
+    return EXPECTATION_SETS_PATH
 
 
 def get_available_expectation_sets() -> list:
@@ -237,7 +262,7 @@ def get_validations_path() -> os.path:
 
     :return: Path.
     """
-    return LOCAL_SITE
+    return VALIDATION_RESULTS_PATH
 
 
 def get_imported_dataset_path(dataset_name: str) -> os.path:

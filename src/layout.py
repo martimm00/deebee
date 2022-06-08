@@ -300,7 +300,42 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     dcc.Dropdown(
                                         EMPTY_LIST,
                                         id="validation_dropdown",
-                                        style={"marginTop": "20px"}
+                                        style={
+                                            "marginTop": "20px",
+                                            "marginBottom": "20px"
+                                        }
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Button(
+                                                        "Validate",
+                                                        id="validate_dataset_button",
+                                                        color="secondary"
+                                                    )
+                                                ]
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            dbc.Button(
+                                                                "Delete all validations",
+                                                                id="delete_validations_button",
+                                                                color="danger"
+                                                            ),
+                                                        ],
+                                                        id="delete_validations_div",
+                                                        style={
+                                                            "display": "none",
+                                                            "textAlign": "right"
+                                                        }
+                                                    )
+                                                ]
+                                            )
+                                        ],
+                                        justify="between"
                                     )
                                 ],
                                 style=MAIN_COL_STYLE
@@ -425,13 +460,13 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                     dbc.ModalFooter(
                         [
                             dbc.Button(
-                                "Finish",
-                                id="finish_expectation_set_definition_button",
+                                "Cancel",
+                                id="cancel_expectation_set_definition_button",
                                 color="secondary"
                             ),
                             dbc.Button(
-                                "Cancel",
-                                id="cancel_expectation_set_definition_button",
+                                "Confirm",
+                                id="confirm_expectation_set_definition_button",
                                 color="secondary"
                             )
                         ]
