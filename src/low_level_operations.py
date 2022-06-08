@@ -226,7 +226,7 @@ def get_expectations_path() -> os.path:
     return EXPECTATION_SUITES_DIR
 
 
-def get_expectations_config_path() -> os.path:
+def get_expectation_sets_path() -> os.path:
     """
     Returns the directory that contains configuration for all Expectation Suites.
 
@@ -241,18 +241,19 @@ def get_available_expectation_sets() -> list:
 
     :return: List with available expectation sets.
     """
-    expectations_config_path = get_expectations_config_path()
+    expectations_config_path = get_expectation_sets_path()
     return [f for f in os.listdir(expectations_config_path) if ".json" in f]
 
 
-def get_expectation_set_config_path(expectation_set_name: str) -> os.path:
+def get_expectation_set_path(expectation_set_name: str) -> os.path:
     """
     Returns the path of the config of the given expectation set.
 
     :return: Path.
     """
-    expectations_config_path = get_expectations_config_path()
-    return join_paths(expectations_config_path, expectation_set_name + ".json")
+    extension = "" if ends_with(".json", expectation_set_name) else ".json"
+    expectations_config_path = get_expectation_sets_path()
+    return join_paths(expectations_config_path, expectation_set_name + extension)
 
 
 def get_validations_path() -> os.path:

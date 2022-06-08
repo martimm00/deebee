@@ -52,7 +52,7 @@ from src.low_level_operations import (
     is_profile_report_available,
     get_elements_inside_directory,
     get_available_expectation_sets,
-    get_expectation_set_config_path,
+    get_expectation_set_path,
 )
 
 
@@ -444,6 +444,31 @@ def set_callbacks(app) -> dash.Dash:
         # Returning updated styles
         return checklist_div_style, no_sets_div_style, display_delete_button
 
+    def check_all_expectation_sets_are_not_empty() -> None:
+        """
+        This function checks that no defined set is empty. If it is, it will be removed.
+        """
+        # Getting the name of all sets
+        expectation_sets = get_available_expectation_sets()
+        for set_name in expectation_sets:
+
+            # Getting the path of each set
+            expectation_set_path = get_expectation_set_path(set_name)
+            with open(expectation_set_path, "r") as fp:
+                content = json.load(fp)
+
+            # If there is no content, then that is an empty expectation set. Let's delete
+            # it
+            if not content:
+                delete_file(expectation_set_path)
+
+    def check_existing_expectation_sets_integrity() -> None:
+        """
+        Responsible for checking all listed expectation sets are valid.
+        """
+        # Check they are not empty
+        check_all_expectation_sets_are_not_empty()
+
     @app.callback(
         [
             Output("expectation_sets_checklist", "options"),
@@ -458,10 +483,11 @@ def set_callbacks(app) -> dash.Dash:
     def update_expectation_set_checklist_listing(
         new_set: int, delete_set: int, selected_sets: list
     ) -> (list, list):
-        if is_trigger("delete_expectation_set_button"):
+        if is_trigger("confirm_expectation_set_definition_button"):
+            check_existing_expectation_sets_integrity()
+        elif is_trigger("delete_expectation_set_button"):
             for set_name in selected_sets:
-                set_path = get_expectation_set_config_path(set_name)
-                print(set_path)
+                set_path = get_expectation_set_path(set_name)
                 delete_file(set_path)
         return [n[:-5] for n in get_available_expectation_sets()], EMPTY_LIST
 
@@ -729,20 +755,14 @@ def set_callbacks(app) -> dash.Dash:
         :param expectation_id: String with the name of the new expectation to be added.
         :param parameters_dict: Dictionary with parameters of this new expectation.
         """
-        expectation_set_path = get_expectation_set_config_path(expectation_set_name)
+        expectation_set_path = get_expectation_set_path(expectation_set_name)
         if not exists_path(expectation_set_path):
-            print("path not exists")
             with open(expectation_set_path, "w") as fp:
-                print("CONTENT OF EMPTY_DICT:", json.dumps(EMPTY_DICT))
                 json.dump(EMPTY_DICT, fp)
         with open(expectation_set_path, "r") as fp:
             config_dict = json.load(fp)
 
-        print("CONFIG_DICT BEFORE ADD", config_dict)
-
         config_dict[expectation_id] = parameters_dict
-
-        print("CONFIG_DICT AFTER ADD", config_dict)
 
         with open(expectation_set_path, "w") as fp:
             json.dump(config_dict, fp)
@@ -757,7 +777,7 @@ def set_callbacks(app) -> dash.Dash:
         :param expectation_set_name: String with the name of the expectation set.
         :param expectation_ids: List with names of expectations to be deleted.
         """
-        expectation_set_config_path = get_expectation_set_config_path(expectation_set_name)
+        expectation_set_config_path = get_expectation_set_path(expectation_set_name)
         with open(expectation_set_config_path, "r") as fp:
             config_dict = json.load(fp)
 
@@ -852,10 +872,16 @@ def set_callbacks(app) -> dash.Dash:
                 current_expectations.append(expectation_interface_name)
 
         elif is_trigger("delete_expectation_button"):
-            expectation_ids = [
-                " ".join(EXPECTATIONS_MAP[interface_name.split(" ")[:-1]])
-                for interface_name in selected_expectations
-            ]
+            expectation_ids = list()
+            for interface_name in selected_expectations:
+
+                # Getting the expectations to be removed
+                expectation_ids.append(EXPECTATIONS_MAP[" ".join(interface_name.split(" ")[:-2])])
+
+                # Removing the expectations from the interface
+                current_expectations.remove(interface_name)
+
+            # Finally, deleting selected expectations in configuration
             delete_expectation_in_config(expectation_set_name, expectation_ids)
 
         return current_expectations
