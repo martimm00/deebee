@@ -4,7 +4,7 @@ from dash import Output, Input, State
 import dash_bootstrap_components as dbc
 
 from constants.path_constants import GREAT_EXPECTATIONS_PATH
-from constants.defaults import EMPTY_LIST, EMPTY_DICT, EMPTY_STRING
+from constants.defaults import EMPTY_LIST, EMPTY_STRING
 from constants.great_expectations_constants import (
     TYPE,
     LENGTH,
@@ -45,7 +45,6 @@ from src.low_level_operations import (
     move,
     rename,
     join_paths,
-    exists_path,
     delete_file,
     has_extension,
     is_dataset_name,
@@ -892,6 +891,8 @@ def set_callbacks(app) -> dash.Dash:
         Displays or hides button to delete all validations, depending on whether there
         are any validations to be deleted or not.
 
+        :param make_validation: Number of clicks.
+        :param delete_validations: Number of clicks.
         :param div_style: Dictionary with current style of the Div containing the delete
         button.
         :param current_validations: List with currently available validations.

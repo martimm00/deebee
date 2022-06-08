@@ -7,8 +7,6 @@ from great_expectations.data_context import DataContext
 from great_expectations.cli.pretty_printing import cli_message
 from great_expectations.exceptions import DataContextError, DatasourceInitializationError
 
-from src.low_level_operations import make_dir, exists_path, join_paths, get_absolute_path
-
 from constants.path_constants import (
     DATA_DIRECTORY,
     IMPORT_DIRECTORY_PATH,
@@ -16,6 +14,8 @@ from constants.path_constants import (
     EXPECTATION_SUITES_PATH,
     VALIDATION_RESULTS_PATH,
 )
+
+from src.low_level_operations import make_dir, exists_path, join_paths, get_absolute_path
 
 
 def get_full_path_to_ge_dir(target_directory: os.path) -> os.path:
