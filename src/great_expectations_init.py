@@ -13,9 +13,8 @@ from constants.path_constants import (
     DATA_DIRECTORY,
     IMPORT_DIRECTORY_PATH,
     GREAT_EXPECTATIONS_DIR,
-    EXPECTATION_SUITES_DIR,
+    EXPECTATION_SUITES_PATH,
     VALIDATION_RESULTS_PATH,
-    PATH_FOR_GE_STORES_CONFIG
 )
 
 
@@ -93,11 +92,6 @@ def change_storage_paths(target_directory: os.path) -> None:
     with open(path_to_yaml, "r") as stream:
         yaml = load(stream, Loader=Loader)
 
-    # Changing paths
-    yaml["stores"]["validations_store"]["store_backend"][
-        "base_directory"
-    ] = PATH_FOR_GE_STORES_CONFIG
-
     # Writing back the updated YML to a file
     with open(path_to_yaml, "w") as stream:
         dump(yaml, stream)
@@ -131,8 +125,8 @@ def get_ge_file_system_ready(ge_dir: os.path, target_directory: os.path) -> None
         check_for_inconsistencies(ge_dir, target_directory)
     else:
         create_file_system(target_directory)
-    if not exists_path(EXPECTATION_SUITES_DIR):
-        make_dir(EXPECTATION_SUITES_DIR)
+    if not exists_path(EXPECTATION_SUITES_PATH):
+        make_dir(EXPECTATION_SUITES_PATH)
     if not exists_path(VALIDATION_RESULTS_PATH):
         make_dir(VALIDATION_RESULTS_PATH)
 

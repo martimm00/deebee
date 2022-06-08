@@ -6,6 +6,11 @@ import dash_bootstrap_components as dbc
 from constants.path_constants import GREAT_EXPECTATIONS_PATH
 from constants.defaults import EMPTY_LIST, EMPTY_DICT, EMPTY_STRING
 from constants.great_expectations_constants import (
+    TYPE,
+    LENGTH,
+    MIN_VALUE,
+    MAX_VALUE,
+    VALUE_SET,
     EXPECTATIONS_MAP,
     EXPECTATION_PARAMS,
     SUPPORTED_GE_EXP_TYPES,
@@ -14,8 +19,8 @@ from constants.great_expectations_constants import (
 
 from objects.expectation_suite_name import ExpectationSuiteName
 
+from src.validation_operations import validate_dataset
 from src.expectation_operations import is_expectation_set_name_valid
-from src.expectation_suite_operations import create_ge_expectation_suite
 from src.expectation_set_operations import (
     write_expectation_in_config,
     delete_expectation_in_config,
@@ -668,11 +673,11 @@ def set_callbacks(app) -> dash.Dash:
         :return: Dictionaries with styles for the mentioned Divs.
         """
         params_div_map = {
-            "type": type_div_style,
-            "length": length_div_style,
-            "values": values_div_style,
-            "min_value": min_value_div_style,
-            "max_value": max_value_div_style
+            TYPE: type_div_style,
+            LENGTH: length_div_style,
+            VALUE_SET: values_div_style,
+            MIN_VALUE: min_value_div_style,
+            MAX_VALUE: max_value_div_style
         }
 
         if is_trigger("new_expectation_button") or not selected_expectation:
@@ -698,13 +703,13 @@ def set_callbacks(app) -> dash.Dash:
         :param value: String with non-parsed value given to the parameter.
         """
         parsed_param = None
-        if param_name == "type":
+        if param_name == TYPE:
             if value in SUPPORTED_GE_EXP_TYPES:
                 parsed_param = value
-        elif param_name == "length":
+        elif param_name == LENGTH:
             if value.isnumeric():
                 parsed_param = value
-        elif param_name == "values":
+        elif param_name == VALUE_SET:
             value = value.replace(" ", "")
             parsed_param = value.split(",")
             for i in range(len(parsed_param)):
@@ -715,7 +720,7 @@ def set_callbacks(app) -> dash.Dash:
                         parsed_param[i] = float(parsed_param[i])
                     except ValueError:
                         pass
-        elif param_name == "min_value" or param_name == "max_value":
+        elif param_name == MIN_VALUE or param_name == MAX_VALUE:
             value = value.replace(",", ".")
             try:
                 parsed_param = float(value)
@@ -775,11 +780,11 @@ def set_callbacks(app) -> dash.Dash:
             current_expectations = list()
         elif is_trigger("add_expectation_button"):
             params_map = {
-                "type": type_input,
-                "length": length_input,
-                "values": values_input,
-                "min_value": min_value_input,
-                "max_value": max_value_input
+                TYPE: type_input,
+                LENGTH: length_input,
+                VALUE_SET: values_input,
+                MIN_VALUE: min_value_input,
+                MAX_VALUE: max_value_input
             }
             all_params_are_set = True
 
@@ -795,8 +800,8 @@ def set_callbacks(app) -> dash.Dash:
 
                 # Expectation will not be added if min value is greater than max
                 # value
-                if "min_value" in params_of_interest and "max_value" in params_of_interest:
-                    if params_of_interest["min_value"] > params_of_interest["max_value"]:
+                if MIN_VALUE in params_of_interest and MAX_VALUE in params_of_interest:
+                    if params_of_interest[MIN_VALUE] > params_of_interest[MAX_VALUE]:
                         all_params_are_set = False
             if all_params_are_set:
                 write_expectation_in_config(
@@ -851,7 +856,7 @@ def set_callbacks(app) -> dash.Dash:
                 dataset_name = get_value(selected_datasets)
                 expectation_set_name = get_value(selected_expectation_sets)
                 validate_dataset(
-                    ge_context, ExpectationSuiteName(expectation_set_name)
+                    ge_context, dataset_name, ExpectationSuiteName(expectation_set_name)
                 )
 
         elif is_trigger("delete_validations_button"):

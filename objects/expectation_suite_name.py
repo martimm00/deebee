@@ -1,4 +1,6 @@
-from constants.path_constants import EXPECTATION_SUITES_DIR
+import os
+
+from constants.path_constants import EXPECTATION_SETS_PATH, EXPECTATION_SUITES_PATH
 
 
 class ExpectationSuiteName:
@@ -8,9 +10,9 @@ class ExpectationSuiteName:
         :param name: String with name set by the
         user.
         """
-        self._directory = EXPECTATION_SUITES_DIR
         self._name = name
-        self._ge_name = self._build_ge_name()
+        self._set_path = self._build_set_path()
+        self._ge_path = self._build_ge_path()
 
     @property
     def name(self) -> str:
@@ -27,33 +29,42 @@ class ExpectationSuiteName:
         :param name: String with new name set by the user.
         """
         self._name = name
-        self._ge_name = self._build_ge_name()
 
     @property
-    def directory(self) -> str:
-        """
-        self._directory getter.
-        :return: String with directory name.
-        """
-        return self._directory
-
-    @property
-    def ge_name(self) -> str:
+    def ge_path(self) -> os.path:
         """
         self._ge_name getter.
         :return: String with Expectation Suite name for
         great_expectations.
         """
-        return self._ge_name
+        return self._ge_path
 
-    def _build_ge_name(self) -> str:
+    @property
+    def set_path(self) -> os.path:
+        """
+        self._ge_name getter.
+        :return: String with Expectation Suite name for
+        great_expectations.
+        """
+        return self._set_path
+
+    def _build_ge_path(self) -> os.path:
         """
         Builds great_expectations Expectation Suite name from the
         directory and the name set by the user.
         :return: String with great_expectations Expectation
         Suite name.
         """
-        return self.directory + "." + self.name
+        return os.path.join(EXPECTATION_SUITES_PATH, self._name + ".json")
+
+    def _build_set_path(self) -> os.path:
+        """
+        Builds great_expectations Expectation Suite name from the
+        directory and the name set by the user.
+        :return: String with great_expectations Expectation
+        Suite name.
+        """
+        return os.path.join(EXPECTATION_SETS_PATH, self._name + ".json")
 
     def __contains__(self, string: str) -> bool:
         """

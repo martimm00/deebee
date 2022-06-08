@@ -7,7 +7,7 @@ from constants.path_constants import (
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
     EXPECTATION_SETS_PATH,
-    EXPECTATION_SUITES_DIR,
+    EXPECTATION_SUITES_PATH,
     VALIDATION_RESULTS_PATH,
 )
 
@@ -223,7 +223,7 @@ def get_expectations_path() -> os.path:
 
     :return: Path.
     """
-    return EXPECTATION_SUITES_DIR
+    return EXPECTATION_SUITES_PATH
 
 
 def get_expectation_sets_path() -> os.path:

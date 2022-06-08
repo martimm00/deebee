@@ -48,7 +48,7 @@ def get_empty_expectation_set_content(expectation_set_name: str) -> dict:
     }
 
 
-def get_expectation_content(expectation_id: str, params_dict: dict) -> dict:
+def get_expectation_config(expectation_id: str, params_dict: dict) -> dict:
     """
     Returns content for a new expectation.
 
@@ -72,7 +72,7 @@ def check_all_expectation_sets_are_not_empty() -> None:
     for set_name in expectation_sets:
 
         # Getting the content of each set
-        content = get_expectation_content(set_name)
+        content = get_expectation_set_config(set_name)
 
         # If there is no content, then that is an empty expectation set. Let's delete
         # it
@@ -117,7 +117,7 @@ def write_expectation_in_config(
     if column_name not in config_dict[EXPECTATIONS]:
         config_dict[EXPECTATIONS][column_name] = list()
 
-    expectation_content = get_expectation_content(expectation_id, parameters_dict)
+    expectation_content = get_expectation_config(expectation_id, parameters_dict)
     config_dict[EXPECTATIONS][column_name].append(expectation_content)
 
     with open(expectation_set_path, "w") as fp:

@@ -1,28 +1,28 @@
 from objects.expectation_suite_name import ExpectationSuiteName
 
 
-def create_empty_ge_expectation_suite(context, name: ExpectationSuiteName):
+def create_empty_ge_expectation_suite(context, name_object: ExpectationSuiteName):
     """
     Creates a new, empty GE Expectation Suite.
 
     :param context: Great Expectations' context object.
-    :param name: ExpectationSuiteName object defining the name.
+    :param name_object: ExpectationSuiteName object defining the name.
 
     :return: GE's Expectation Suite object.
     """
-    return context.create_expectation_suite(name.ge_name, overwrite_existing=True)
+    return context.create_expectation_suite(name_object.name, overwrite_existing=True)
 
 
-def get_expectation_suite(context, name: ExpectationSuiteName):
+def get_expectation_suite(context, name_object: ExpectationSuiteName):
     """
     Loads GE's Expectation Suite object from file.
 
     :param context: GE's context object.
-    :param name: ExpectationSuiteName object.
+    :param name_object: ExpectationSuiteName object.
 
     :return: GE's Expectation Suite object.
     """
-    return context.get_expectation_suite(name.ge_name)
+    return context.get_expectation_suite(name_object.name)
 
 
 def get_expectation_suite_name_object(name: str) -> ExpectationSuiteName:

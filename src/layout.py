@@ -481,16 +481,16 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                     ),
                     dbc.ModalBody(
                         [
-                            html.H5("Select an expectation:"),
-                            dcc.Dropdown(
-                                id="supported_expectations_dropdown",
-                                options=sorted(list(EXPECTATIONS_MAP.keys())),
-                                style={"marginBottom": "20px"}
-                            ),
                             html.H5("Select a column:"),
                             dcc.Dropdown(
                                 id="table_columns_dropdown",
                                 options=EMPTY_LIST,
+                                style={"marginBottom": "20px"}
+                            ),
+                            html.H5("Select an expectation:"),
+                            dcc.Dropdown(
+                                id="supported_expectations_dropdown",
+                                options=sorted(list(EXPECTATIONS_MAP.keys())),
                                 style={"marginBottom": "20px"}
                             ),
                             html.Div(

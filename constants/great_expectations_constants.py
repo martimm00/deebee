@@ -25,13 +25,13 @@ EXPECTATION_PARAMS = {
     "expect_column_values_to_be_unique": {},
     "expect_column_values_to_not_be_null": {},
     "expect_column_values_to_be_in_set": {
-        "values": "list"
+        "value_set": "list"
     },
     "expect_column_value_lengths_to_equal": {
-        "length": "int"
+        "value": "int"
     },
     "expect_column_values_to_be_of_type": {
-        "type": "str"
+        "type_": "str"
     },
     "expect_column_values_to_be_between": {
         "min_value": "int",
@@ -45,3 +45,14 @@ SUPPORTED_GE_EXP_TYPES = [
     "str",
 ]
 EXPECTATION_CONJUNCTION = "over"
+
+# Expectation parameter constants
+TYPE = "type_"
+VALUE_SET = "value_set"
+LENGTH = "value"
+MIN_VALUE = "min_value"
+MAX_VALUE = "max_value"
+
+# validation_operations::save_validation constants
+BATCH_KWARGS = "batch_kwargs"
+EXPECTATION_SUITE_NAMES = "expectation_suite_names"
