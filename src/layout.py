@@ -318,6 +318,14 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                             ),
                                             dbc.Col(
                                                 [
+                                                    dcc.Input(
+                                                        id="validation_confidence_input",
+                                                        style=INPUT_STYLE
+                                                    )
+                                                ]
+                                            ),
+                                            dbc.Col(
+                                                [
                                                     html.Div(
                                                         [
                                                             dbc.Button(

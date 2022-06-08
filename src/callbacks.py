@@ -839,24 +839,28 @@ def set_callbacks(app) -> dash.Dash:
         ],
         [
             State("imported_datasets_checklist", "value"),
-            State("expectation_sets_checklist", "value")
+            State("expectation_sets_checklist", "value"),
+            State("validation_confidence_input", "value")
         ]
     )
     def update_validation_listing(
         validate: int,
         delete_validations: int,
         selected_datasets: list,
-        selected_expectation_sets: list
+        selected_expectation_sets: list,
+        confidence: str
     ) -> list:
         validations_path = get_validations_path()
 
         if is_trigger("validate_dataset_button"):
             if list_has_one_item(selected_datasets)\
-                    and list_has_one_item(selected_expectation_sets):
+                    and list_has_one_item(selected_expectation_sets)\
+                    and confidence.isnumeric():
                 dataset_name = get_value(selected_datasets)
                 expectation_set_name = get_value(selected_expectation_sets)
+                expectation_name_object = ExpectationSuiteName(expectation_set_name)
                 validate_dataset(
-                    ge_context, dataset_name, ExpectationSuiteName(expectation_set_name)
+                    ge_context, dataset_name, expectation_name_object, int(confidence)
                 )
 
         elif is_trigger("delete_validations_button"):
@@ -899,5 +903,19 @@ def set_callbacks(app) -> dash.Dash:
         else:
             div_style = display_component(div_style)
         return div_style
+
+    @app.callback(
+        Output("validation_confidence", "value"),
+        Input("validation_dropdown", "options")
+    )
+    def clear_validation_confidence(change_in_validation_options: list) -> str:
+        """
+        Clears validation confidence.
+
+        :param change_in_validation_options: List with updated options.
+
+        :return: Empty string.
+        """
+        return EMPTY_STRING
 
     return app

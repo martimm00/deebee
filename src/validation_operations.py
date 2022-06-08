@@ -17,7 +17,7 @@ from src.expectation_suite_operations import create_empty_ge_expectation_suite
 
 
 def apply_expectation_to_dataset(
-    batch, column_name: str, expectation_config: dict
+    batch, column_name: str, expectation_config: dict, confidence: int
 ) -> None:
     """
     Applies individual expectations to the batch.
@@ -27,10 +27,12 @@ def apply_expectation_to_dataset(
     be applied.
     :param expectation_config: Dictionary that provides configuration for the expectation
     itself, that comes in the format of expectation set configuration.
+    :param confidence: Integer with confidence ranging from 0 to 100.
     """
     expectation_id = expectation_config.get(EXPECTATION_NAME)
     parameters = expectation_config.get(PARAMETERS)
     parameters["column"] = column_name
+    parameters["mostly"] = confidence/100
 
     getattr(batch, expectation_id)(**parameters)
 
@@ -87,7 +89,12 @@ def save_validation(
     return validation_result_identifier
 
 
-def validate_dataset(context, dataset_name: str, expectation_name_object: ExpectationSuiteName) -> None:
+def validate_dataset(
+    context,
+    dataset_name: str,
+    expectation_name_object: ExpectationSuiteName,
+    confidence=100
+) -> None:
     """
     This function is used to compute validation results when applying an Expectation
     Suite to a dataset.
@@ -95,6 +102,7 @@ def validate_dataset(context, dataset_name: str, expectation_name_object: Expect
     :param context: GE's context object.
     :param dataset_name: String with the name of the dataset to be validated.
     :param expectation_name_object: Expectation set name.
+    :param confidence: Integer with confidence ranging from 0 to 100.
     """
     dataset_path = get_imported_dataset_path(dataset_name)
 
@@ -109,7 +117,9 @@ def validate_dataset(context, dataset_name: str, expectation_name_object: Expect
 
     for column_name in expectations_from_set_config:
         for expectation_config in expectations_from_set_config.get(column_name):
-            apply_expectation_to_dataset(batch, column_name, expectation_config)
+            apply_expectation_to_dataset(
+                batch, column_name, expectation_config, confidence
+            )
 
     # Saving Expectation Suite to JSON file
     batch.save_expectation_suite(discard_failed_expectations=False)
