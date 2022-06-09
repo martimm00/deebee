@@ -386,8 +386,8 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                     dbc.Col(
                                                         [
                                                             dbc.Button(
-                                                                "Download",
-                                                                id="download_validation_result_button",
+                                                                "Export",
+                                                                id="export_validation_result_button",
                                                                 color="secondary"
                                                             )
                                                         ],

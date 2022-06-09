@@ -943,11 +943,11 @@ def set_callbacks(app) -> dash.Dash:
         State("validation_dropdown", "value"),
         prevent_initial_call=True
     )
-    def open_validation_result(open: int, selected_validation: str) -> None:
+    def open_validation_result(open_validation: int, selected_validation: str) -> None:
         """
         Opens validation result in a new browser tab.
 
-        :param open: Number of clicks.
+        :param open_validation: Number of clicks.
         :param selected_validation: String with selected result to be opened.
         """
         validation_path = get_validation_path(selected_validation)
@@ -955,7 +955,7 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         Output("validation_result_downloader", "data"),
-        Input("download_validation_result_button", "n_clicks"),
+        Input("export_validation_result_button", "n_clicks"),
         State("validation_dropdown", "value"),
         prevent_initial_call=True
     )
@@ -966,7 +966,7 @@ def set_callbacks(app) -> dash.Dash:
         :param download: Number of clicks.
         :param selected_validation: String with selected result to be downloaded.
 
-        :return: Downloader's data object.
+        :return: Downloader data object.
         """
         validation_path = get_validation_path(selected_validation)
         return dcc.send_file(validation_path)
