@@ -1,9 +1,9 @@
-import json
-import pandas as pd
+import os
 from great_expectations.checkpoint import LegacyCheckpoint
 
 from objects.expectation_suite_name import ExpectationSuiteName
 
+from constants.path_constants import GE_VALIDATIONS_PATH, VALIDATION_RESULTS_PATH
 from constants.great_expectations_constants import BATCH_KWARGS, EXPECTATION_SUITE_NAMES
 from constants.expectation_set_constants import (
     PARAMETERS,
@@ -11,9 +11,20 @@ from constants.expectation_set_constants import (
     EXPECTATION_NAME
 )
 
-from src.low_level_operations import get_imported_dataset_path
+from src.dataset_operations import read_dataset
+from src.utils import get_value, infer_csv_separator
 from src.batch_operations import get_ge_batch, get_batch_kwargs
+from src.expectation_set_operations import get_expectation_set_config
 from src.expectation_suite_operations import create_empty_ge_expectation_suite
+from src.low_level_operations import (
+    move,
+    rename,
+    join_paths,
+    is_directory,
+    delete_directory,
+    get_imported_dataset_path,
+    get_elements_inside_directory
+)
 
 
 def apply_expectation_to_dataset(
@@ -37,28 +48,26 @@ def apply_expectation_to_dataset(
     getattr(batch, expectation_id)(**parameters)
 
 
-def check_dataset_compatibility(
-    dataset: pd.DataFrame, expectation_and_columns: dict
+def is_dataset_compatible(
+    dataset_path: os.path, expectations_from_set_config: dict
 ) -> bool:
     """
     This function checks if a dataset is compatible with previously defined expectations
     in an Expectation Suite.
 
-    :param dataset: Pandas DataFrame that has to be checked.
-    :param expectation_and_columns: Dictionary that contains all currently defined
+    :param dataset_path: Dataset path.
+    :param expectations_from_set_config: Dictionary that contains all currently defined
     expectations, the columns where they have to be applied and their params (if any).
 
     :return: String with the message that has to be displayed in a warning. If it returns
     an empty string, then it means no warning has to be popped.
     """
-    dataset_columns = set(list(dataset.columns))
-    expectations_columns = list()
+    separator = infer_csv_separator(dataset_path)
+    dataset = read_dataset(dataset_path, sep=separator, n_rows=2)
+    dataset_columns = set(dataset.columns)
+    columns_with_expectations = set(expectations_from_set_config.keys())
 
-    for expectation_name in expectation_and_columns:
-        expectations_columns += list(expectation_and_columns[expectation_name].keys())
-    expectations_columns = set(expectations_columns)
-
-    return expectations_columns.issubset(dataset_columns)
+    return columns_with_expectations.issubset(dataset_columns)
 
 
 def save_validation(
@@ -93,7 +102,7 @@ def validate_dataset(
     context,
     dataset_name: str,
     expectation_name_object: ExpectationSuiteName,
-    confidence=100
+    confidence: int
 ) -> None:
     """
     This function is used to compute validation results when applying an Expectation
@@ -106,23 +115,83 @@ def validate_dataset(
     """
     dataset_path = get_imported_dataset_path(dataset_name)
 
-    with open(expectation_name_object.set_path, "r") as fp:
-        config = json.load(fp)
+    config = get_expectation_set_config(expectation_name_object.name)
     expectations_from_set_config = config.get(EXPECTATIONS)
 
-    expectation_suite = create_empty_ge_expectation_suite(
-        context, expectation_name_object
-    )
-    batch = get_ge_batch(context, expectation_suite, dataset_path)
+    # If the selected dataset is compatible with the selected set of expectations
+    if is_dataset_compatible(dataset_path, expectations_from_set_config):
+        expectation_suite = create_empty_ge_expectation_suite(
+            context, expectation_name_object
+        )
+        batch = get_ge_batch(context, expectation_suite, dataset_path)
 
-    for column_name in expectations_from_set_config:
-        for expectation_config in expectations_from_set_config.get(column_name):
-            apply_expectation_to_dataset(
-                batch, column_name, expectation_config, confidence
+        for column_name in expectations_from_set_config:
+            for expectation_config in expectations_from_set_config.get(column_name):
+                apply_expectation_to_dataset(
+                    batch, column_name, expectation_config, confidence
+                )
+
+        # Saving Expectation Suite to JSON file
+        batch.save_expectation_suite(discard_failed_expectations=False)
+
+        batch_kwargs = get_batch_kwargs(context, dataset_path)
+        save_validation(context, expectation_name_object, batch_kwargs)
+
+
+def build_new_validation_file_name(
+        set_name: str, dataset_name: str, confidence: str
+) -> str:
+    """
+    Builds new name for validation file.
+
+    :param set_name: String with expectation set name.
+    :param dataset_name: String with dataset name.
+    :param confidence: Numeric string representing the confidence.
+
+    :return: String with new name for validation file.
+    """
+    return set_name + "_" + ".".join(
+        dataset_name.split(".")[:-1]) + "_" + confidence + ".html"
+
+
+def move_validation_to_app_system(dataset_name: str, confidence: str) -> None:
+    """
+    Changes the name of the last validation, then moves it to the app's file system.
+
+    :param dataset_name: String with dataset name.
+    :param confidence: Numeric string that represents the confidence in the
+    validation results.
+    """
+    # Getting all elements inside GE's validation directory
+    available_elements = get_elements_inside_directory(GE_VALIDATIONS_PATH)
+    for set_name in available_elements:
+
+        # Getting to validation
+        set_element_path = join_paths(GE_VALIDATIONS_PATH, set_name)
+        if is_directory(set_element_path):
+            elements_inside = get_elements_inside_directory(set_element_path)
+            unique_name = get_value(elements_inside)
+            validation_path = os.path.join(
+                *[set_element_path, unique_name, unique_name]
+            )
+            validation_file_name = get_value(
+                get_elements_inside_directory(validation_path)
             )
 
-    # Saving Expectation Suite to JSON file
-    batch.save_expectation_suite(discard_failed_expectations=False)
+            # Renaming it
+            new_validation_file_name = build_new_validation_file_name(
+                set_name, dataset_name, confidence
+            )
+            rename(validation_path, validation_file_name, new_validation_file_name)
+            validation_file_path = join_paths(
+                validation_path, new_validation_file_name
+            )
+            new_validation_file_path = join_paths(
+                VALIDATION_RESULTS_PATH, new_validation_file_name
+            )
 
-    batch_kwargs = get_batch_kwargs(context, dataset_path)
-    save_validation(context, expectation_name_object, batch_kwargs)
+            # Moving it
+            move(validation_file_path, new_validation_file_path)
+
+            # Deleting old directories
+            delete_directory(set_element_path)

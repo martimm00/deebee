@@ -1,10 +1,13 @@
 import dash
+from dash import dcc
 import great_expectations as ge
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
 
-from constants.path_constants import GREAT_EXPECTATIONS_PATH
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
+from constants.path_constants import (
+    GREAT_EXPECTATIONS_PATH,
+)
 from constants.great_expectations_constants import (
     TYPE,
     LENGTH,
@@ -19,8 +22,8 @@ from constants.great_expectations_constants import (
 
 from objects.expectation_suite_name import ExpectationSuiteName
 
-from src.validation_operations import validate_dataset
 from src.expectation_operations import is_expectation_set_name_valid
+from src.validation_operations import validate_dataset, move_validation_to_app_system
 from src.expectation_set_operations import (
     write_expectation_in_config,
     delete_expectation_in_config,
@@ -48,11 +51,13 @@ from src.low_level_operations import (
     delete_file,
     has_extension,
     is_dataset_name,
+    get_validation_path,
     get_import_dir_path,
     get_validations_path,
     is_profile_report_name,
     get_profile_report_path,
     get_profile_reports_path,
+    get_expectation_set_path,
     get_imported_dataset_path,
     get_validation_file_names,
     get_uploaded_dataset_path,
@@ -60,7 +65,6 @@ from src.low_level_operations import (
     is_profile_report_available,
     get_elements_inside_directory,
     get_available_expectation_sets,
-    get_expectation_set_path,
 )
 
 
@@ -831,7 +835,10 @@ def set_callbacks(app) -> dash.Dash:
         return current_expectations
 
     @app.callback(
-        Output("validation_dropdown", "options"),
+        [
+            Output("validation_dropdown", "options"),
+            Output("validation_dropdown", "value"),
+        ],
         [
             Input("validate_dataset_button", "n_clicks"),
             Input("delete_validations_button", "n_clicks")
@@ -848,19 +855,22 @@ def set_callbacks(app) -> dash.Dash:
         selected_datasets: list,
         selected_expectation_sets: list,
         confidence: str
-    ) -> list:
+    ) -> (list, str):
         validations_path = get_validations_path()
 
+        dataset_name = EMPTY_STRING
         if is_trigger("validate_dataset_button"):
             if list_has_one_item(selected_datasets)\
-                    and list_has_one_item(selected_expectation_sets)\
-                    and confidence.isnumeric():
-                dataset_name = get_value(selected_datasets)
-                expectation_set_name = get_value(selected_expectation_sets)
-                expectation_name_object = ExpectationSuiteName(expectation_set_name)
-                validate_dataset(
-                    ge_context, dataset_name, expectation_name_object, int(confidence)
-                )
+                    and list_has_one_item(selected_expectation_sets):
+                if not confidence:
+                    confidence = "100"
+                if confidence.isnumeric():
+                    dataset_name = get_value(selected_datasets)
+                    expectation_set_name = get_value(selected_expectation_sets)
+                    expectation_name_object = ExpectationSuiteName(expectation_set_name)
+                    validate_dataset(
+                        ge_context, dataset_name, expectation_name_object, int(confidence)
+                    )
 
         elif is_trigger("delete_validations_button"):
             current_validations = get_validation_file_names()
@@ -868,24 +878,28 @@ def set_callbacks(app) -> dash.Dash:
                 validation_path = join_paths(validations_path, validation_name)
                 delete_file(validation_path)
 
-        return get_validation_file_names()
+        move_validation_to_app_system(dataset_name, confidence)
+
+        available_validations = sorted(get_validation_file_names())
+        selected_by_default = ""
+        if not is_list_empty(available_validations):
+            selected_by_default = available_validations[0]
+        return available_validations, selected_by_default
 
     @app.callback(
         Output("delete_validations_div", "style"),
         [
-            Input("validate_dataset_button", "n_clicks"),
+            Input("validation_dropdown", "options"),
             Input("delete_validations_button", "n_clicks")
         ],
         [
             State("delete_validations_div", "style"),
-            State("validation_dropdown", "options")
         ]
     )
     def toggle_delete_validations_div(
         make_validation: int,
         delete_validations: int,
         div_style: dict,
-        current_validations: list
     ) -> dict:
         """
         Displays or hides button to delete all validations, depending on whether there
@@ -895,18 +909,19 @@ def set_callbacks(app) -> dash.Dash:
         :param delete_validations: Number of clicks.
         :param div_style: Dictionary with current style of the Div containing the delete
         button.
-        :param current_validations: List with currently available validations.
 
         :return: Dictionary with updated style.
         """
-        if is_list_empty(current_validations):
+        available_validations = get_validation_file_names()
+        if is_list_empty(available_validations)\
+                or is_trigger("delete_validations_button"):
             div_style = hide_component(div_style)
         else:
             div_style = display_component(div_style)
         return div_style
 
     @app.callback(
-        Output("validation_confidence", "value"),
+        Output("validation_confidence_input", "value"),
         Input("validation_dropdown", "options")
     )
     def clear_validation_confidence(change_in_validation_options: list) -> str:
@@ -917,6 +932,24 @@ def set_callbacks(app) -> dash.Dash:
 
         :return: Empty string.
         """
-        return EMPTY_STRING
+        return "100"
+
+    @app.callback(
+        Output("validation_result_downloader", "data"),
+        Input("download_validation_result_button", "n_clicks"),
+        State("validation_dropdown", "value"),
+        prevent_initial_call=True
+    )
+    def download_validation_result(download: int, selected_validation: str) -> list:
+        """
+        Downloads a validation result.
+
+        :param download: Number of clicks.
+        :param selected_validation: String with selected result to be downloaded.
+
+        :return: Empty list.
+        """
+        validation_path = get_validation_path(selected_validation)
+        return dcc.send_file(validation_path)
 
     return app

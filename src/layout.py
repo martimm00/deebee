@@ -318,14 +318,6 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                             ),
                                             dbc.Col(
                                                 [
-                                                    dcc.Input(
-                                                        id="validation_confidence_input",
-                                                        style=INPUT_STYLE
-                                                    )
-                                                ]
-                                            ),
-                                            dbc.Col(
-                                                [
                                                     html.Div(
                                                         [
                                                             dbc.Button(
@@ -342,6 +334,62 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                     )
                                                 ]
                                             )
+                                        ],
+                                        justify="between"
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    html.H6(
+                                                        "Confidence (%):",
+                                                        style={"marginTop": "10px"}
+                                                    )
+                                                ],
+                                                width=4
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dcc.Input(
+                                                        id="validation_confidence_input",
+                                                        value=100,
+                                                        style={
+                                                            "height": "38px",
+                                                            "width": "55px",
+                                                            "border": "3px black solid",
+                                                            "borderRadius": "20px",
+                                                            "paddingLeft": "10px",
+                                                            "paddingRight": "10px",
+                                                            "marginBottom": "15px"
+                                                        }
+                                                    )
+                                                ],
+                                                width=2
+                                            ),
+                                        ],
+                                        justify="start",
+                                        style={"marginTop": "20px"},
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Button(
+                                                        "Open result",
+                                                        id="open_validation_result_button",
+                                                        color="secondary"
+                                                    )
+                                                ],
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dbc.Button(
+                                                        "Download",
+                                                        id="download_validation_result_button",
+                                                        color="secondary"
+                                                    )
+                                                ],
+                                            ),
                                         ],
                                         justify="between"
                                     )
@@ -602,6 +650,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
 
             # Auxiliary Divs
             html.Div(id="profile_report_output_div", style={"display": "none"}),
+            dcc.Download(id="validation_result_downloader")
         ],
         style={
             "padding": "30px",

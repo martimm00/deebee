@@ -1,7 +1,7 @@
 import pandas as pd
 
 from src.json_operations import to_json
-from utils import (
+from src.utils import (
     read_dataset,
     is_list_empty,
 )

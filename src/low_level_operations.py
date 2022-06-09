@@ -142,7 +142,7 @@ def is_validation_name(name: str) -> bool:
 
     :return: Bool.
     """
-    return ends_with(".json", name)
+    return ends_with(".html", name)
 
 
 def get_imported_dataset_names() -> list:
@@ -264,6 +264,18 @@ def get_validations_path() -> os.path:
     :return: Path.
     """
     return VALIDATION_RESULTS_PATH
+
+
+def get_validation_path(name: str) -> os.path:
+    """
+    Returns the path of the given validation.
+
+    :param name: String with validation name.
+
+    :return: Path.
+    """
+    validations_path = get_validations_path()
+    return join_paths(validations_path, name)
 
 
 def get_imported_dataset_path(dataset_name: str) -> os.path:
