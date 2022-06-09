@@ -887,7 +887,10 @@ def set_callbacks(app) -> dash.Dash:
         return available_validations, selected_by_default
 
     @app.callback(
-        Output("delete_validations_div", "style"),
+        [
+            Output("delete_validations_div", "style"),
+            Output("validation_operations_div", "style")
+        ],
         [
             Input("validation_dropdown", "options"),
             Input("delete_validations_button", "n_clicks")
@@ -900,7 +903,7 @@ def set_callbacks(app) -> dash.Dash:
         make_validation: int,
         delete_validations: int,
         div_style: dict,
-    ) -> dict:
+    ) -> (dict, dict):
         """
         Displays or hides button to delete all validations, depending on whether there
         are any validations to be deleted or not.
@@ -918,7 +921,7 @@ def set_callbacks(app) -> dash.Dash:
             div_style = hide_component(div_style)
         else:
             div_style = display_component(div_style)
-        return div_style
+        return div_style, div_style
 
     @app.callback(
         Output("validation_confidence_input", "value"),
@@ -935,19 +938,35 @@ def set_callbacks(app) -> dash.Dash:
         return "100"
 
     @app.callback(
+        Output("open_validation_result_output_div", "children"),
+        Input("open_validation_result_button", "n_clicks"),
+        State("validation_dropdown", "value"),
+        prevent_initial_call=True
+    )
+    def open_validation_result(open: int, selected_validation: str) -> None:
+        """
+        Opens validation result in a new browser tab.
+
+        :param open: Number of clicks.
+        :param selected_validation: String with selected result to be opened.
+        """
+        validation_path = get_validation_path(selected_validation)
+        open_file_in_browser(validation_path)
+
+    @app.callback(
         Output("validation_result_downloader", "data"),
         Input("download_validation_result_button", "n_clicks"),
         State("validation_dropdown", "value"),
         prevent_initial_call=True
     )
-    def download_validation_result(download: int, selected_validation: str) -> list:
+    def download_validation_result(download: int, selected_validation: str):
         """
         Downloads a validation result.
 
         :param download: Number of clicks.
         :param selected_validation: String with selected result to be downloaded.
 
-        :return: Empty list.
+        :return: Downloader's data object.
         """
         validation_path = get_validation_path(selected_validation)
         return dcc.send_file(validation_path)

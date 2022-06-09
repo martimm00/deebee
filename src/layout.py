@@ -370,28 +370,34 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                         justify="start",
                                         style={"marginTop": "20px"},
                                     ),
-                                    dbc.Row(
+                                    html.Div(
                                         [
-                                            dbc.Col(
+                                            dbc.Row(
                                                 [
-                                                    dbc.Button(
-                                                        "Open result",
-                                                        id="open_validation_result_button",
-                                                        color="secondary"
-                                                    )
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Button(
+                                                                "Open result",
+                                                                id="open_validation_result_button",
+                                                                color="secondary"
+                                                            )
+                                                        ],
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Button(
+                                                                "Download",
+                                                                id="download_validation_result_button",
+                                                                color="secondary"
+                                                            )
+                                                        ],
+                                                    ),
                                                 ],
-                                            ),
-                                            dbc.Col(
-                                                [
-                                                    dbc.Button(
-                                                        "Download",
-                                                        id="download_validation_result_button",
-                                                        color="secondary"
-                                                    )
-                                                ],
-                                            ),
+                                                justify="between"
+                                            )
                                         ],
-                                        justify="between"
+                                        id="validation_operations_div",
+                                        style={"display": "none"}
                                     )
                                 ],
                                 style=MAIN_COL_STYLE
@@ -650,6 +656,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
 
             # Auxiliary Divs
             html.Div(id="profile_report_output_div", style={"display": "none"}),
+            html.Div(id="open_validation_result_output_div", style={"display": "none"}),
             dcc.Download(id="validation_result_downloader")
         ],
         style={
