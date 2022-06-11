@@ -541,11 +541,11 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         [
-            Output("compatible_expectations_dropdown", "value"),
+            Output("compatible_single_column_expectations_dropdown", "value"),
             Output("table_columns_dropdown", "value"),
             Output("type_exp_param_input", "value"),
             Output("length_exp_param_input", "value"),
-            Output("values_exp_param_input", "value"),
+            Output("values_single_column_exp_param_input", "value"),
             Output("min_value_exp_param_input", "value"),
             Output("max_value_exp_param_input", "value")
         ],
@@ -641,18 +641,18 @@ def set_callbacks(app) -> dash.Dash:
         [
             Output("type_exp_param_div", "style"),
             Output("length_exp_param_div", "style"),
-            Output("values_exp_param_div", "style"),
+            Output("values_single_column_exp_param_div", "style"),
             Output("min_value_exp_param_div", "style"),
             Output("max_value_exp_param_div", "style")
         ],
         [
             Input("new_expectation_button", "n_clicks"),
-            Input("compatible_expectations_dropdown", "value")
+            Input("compatible_single_column_expectations_dropdown", "value")
         ],
         [
             State("type_exp_param_div", "style"),
             State("length_exp_param_div", "style"),
-            State("values_exp_param_div", "style"),
+            State("values_single_column_exp_param_div", "style"),
             State("min_value_exp_param_div", "style"),
             State("max_value_exp_param_div", "style")
         ],
@@ -756,14 +756,14 @@ def set_callbacks(app) -> dash.Dash:
             Input("delete_expectation_button", "n_clicks")
         ],
         [
-            State("compatible_expectations_dropdown", "value"),
+            State("compatible_single_column_expectations_dropdown", "value"),
             State("expectation_set_name_input", "value"),
             State("table_columns_dropdown", "value"),
             State("expectations_checklist", "options"),
             State("expectations_checklist", "value"),
             State("type_exp_param_input", "value"),
             State("length_exp_param_input", "value"),
-            State("values_exp_param_input", "value"),
+            State("values_single_column_exp_param_input", "value"),
             State("min_value_exp_param_input", "value"),
             State("max_value_exp_param_input", "value"),
 
@@ -840,7 +840,7 @@ def set_callbacks(app) -> dash.Dash:
         return current_expectations
 
     @app.callback(
-        Output("compatible_expectations_dropdown", "options"),
+        Output("compatible_single_column_expectations_dropdown", "options"),
         [
             Input("table_columns_dropdown", "value"),
             Input("new_expectation_button", "n_clicks")

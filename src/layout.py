@@ -543,94 +543,154 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                     ),
                     dbc.ModalBody(
                         [
-                            html.H5("Select a column:"),
-                            dcc.Dropdown(
-                                id="table_columns_dropdown",
-                                options=EMPTY_LIST,
-                                style={"marginBottom": "20px"}
-                            ),
-                            html.H5("Select an expectation:"),
-                            dcc.Dropdown(
-                                id="compatible_expectations_dropdown",
-                                options=sorted(list(EXPECTATIONS_MAP.keys())),
-                                style={"marginBottom": "20px"}
-                            ),
                             html.Div(
                                 [
-                                    html.H5("Type"),
+                                    html.H5("Select a column:"),
                                     dcc.Dropdown(
-                                        id="type_exp_param_input",
-                                        options=SUPPORTED_GE_EXP_TYPES,
+                                        id="table_columns_dropdown",
+                                        options=EMPTY_LIST,
                                         style={"marginBottom": "20px"}
-                                    )
-                                ],
-                                id="type_exp_param_div",
-                                style={"display": "none"}
-                            ),
-                            html.Div(
-                                [
-                                    html.H5("Length"),
-                                    dcc.Input(
-                                        id="length_exp_param_input",
-                                        style=INPUT_STYLE
-                                    )
-                                ],
-                                id="length_exp_param_div",
-                                style={"display": "none"}
-                            ),
-                            html.Div(
-                                [
-                                    html.H5("Values (v1,v2,...)"),
-                                    dcc.Input(
-                                        id="values_exp_param_input",
-                                        style=INPUT_STYLE
-                                    )
-                                ],
-                                id="values_exp_param_div",
-                                style={"display": "none"}
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.H5("Minimum value"),
-                                                    dcc.Input(
-                                                        id="min_value_exp_param_input",
-                                                        style=INPUT_STYLE
-                                                    )
-                                                ],
-                                                id="min_value_exp_param_div",
-                                                style={
-                                                    "display": "none",
-                                                    "textAlign": "center"
-                                                }
-                                            ),
-                                        ]
                                     ),
-                                    dbc.Col(
+                                    html.H5("Select an expectation:"),
+                                    dcc.Dropdown(
+                                        id="compatible_single_column_expectations_dropdown",
+                                        options=sorted(list(EXPECTATIONS_MAP.keys())),
+                                        style={"marginBottom": "20px"}
+                                    ),
+                                    html.Div(
                                         [
-                                            html.Div(
+                                            html.H5("Type"),
+                                            dcc.Dropdown(
+                                                id="type_exp_param_input",
+                                                options=SUPPORTED_GE_EXP_TYPES,
+                                                style={"marginBottom": "20px"}
+                                            )
+                                        ],
+                                        id="type_exp_param_div",
+                                        style={"display": "none"}
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.H5("Length"),
+                                            dcc.Input(
+                                                id="length_exp_param_input",
+                                                style=INPUT_STYLE
+                                            )
+                                        ],
+                                        id="length_exp_param_div",
+                                        style={"display": "none"}
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.H5("Values (v1,v2,...)"),
+                                            dcc.Input(
+                                                id="values_single_column_exp_param_input",
+                                                style=INPUT_STYLE
+                                            )
+                                        ],
+                                        id="values_single_column_exp_param_div",
+                                        style={"display": "none"}
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
                                                 [
-                                                    html.H5("Maximum value"),
-                                                    dcc.Input(
-                                                        id="max_value_exp_param_input",
-                                                        style=INPUT_STYLE
-                                                    )
-                                                ],
-                                                id="max_value_exp_param_div",
-                                                style={
-                                                    "display": "none",
-                                                    "textAlign": "center"
-                                                }
+                                                    html.Div(
+                                                        [
+                                                            html.H5("Minimum value"),
+                                                            dcc.Input(
+                                                                id="min_value_exp_param_input",
+                                                                style=INPUT_STYLE
+                                                            )
+                                                        ],
+                                                        id="min_value_exp_param_div",
+                                                        style={
+                                                            "display": "none",
+                                                            "textAlign": "center"
+                                                        }
+                                                    ),
+                                                ]
                                             ),
-                                        ]
-                                    )
+                                            dbc.Col(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            html.H5("Maximum value"),
+                                                            dcc.Input(
+                                                                id="max_value_exp_param_input",
+                                                                style=INPUT_STYLE
+                                                            )
+                                                        ],
+                                                        id="max_value_exp_param_div",
+                                                        style={
+                                                            "display": "none",
+                                                            "textAlign": "center"
+                                                        }
+                                                    ),
+                                                ]
+                                            )
+                                        ],
+                                        justify="between",
+                                    ),
                                 ],
-                                justify="between",
+                                id="single_column_expectation_definer_div"
                             ),
-                            dbc.ModalFooter(
+                            html.Div(
+                                [
+                                    html.H5("Select an expectation:"),
+                                    dcc.Dropdown(
+                                        id="compatible_multicolumn_expectations_checklist",
+                                        options=sorted(list(EXPECTATIONS_MAP.keys())),
+                                        style={"marginBottom": "20px"}
+                                    ),
+                                    html.H5("Select columns:"),
+                                    html.Div(
+                                        [
+                                            dcc.Dropdown(
+                                                id="table_column_a",
+                                                options=EMPTY_LIST,
+                                                value=EMPTY_STRING
+                                            ),
+                                            dcc.Dropdown(
+                                                id="table_column_b",
+                                                options=EMPTY_LIST,
+                                                value=EMPTY_STRING
+                                            )
+                                        ],
+                                        id="table_a_and_b_columns_div",
+                                        style={"display": "none"}
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Checklist(
+                                                value=EMPTY_LIST,
+                                                options=EMPTY_LIST,
+                                                id="table_columns_checklist"
+                                            ),
+                                        ],
+                                        id="table_columns_checklist_div",
+                                        style={"display": "none"}
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.H5("Values (v1,v2),(v3,v4)...)"),
+                                            dcc.Input(
+                                                id="values_multicolumn_exp_param_input",
+                                                style=INPUT_STYLE
+                                            )
+                                        ],
+                                        id="values_multicolumn_exp_param_div",
+                                        style={"display": "none"}
+                                    )
+                                ]
+                            )
+                        ],
+                        id="multicolumn_expectation_definer_div",
+                        style={"display": "none"}
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            html.Div(
                                 [
                                     dbc.Button(
                                         "Multicolumn",
@@ -638,7 +698,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                         color="secondary"
                                     ),
                                 ],
-                                id="switch_to_multicolumn_expectations_div",
+                                id="switch_to_multicolumn_expectations_div"
                             ),
                             html.Div(
                                 [
@@ -662,7 +722,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                 color="secondary"
                             )
                         ]
-                    ),
+                    )
                 ],
                 id="expectation_definer_modal",
                 style={

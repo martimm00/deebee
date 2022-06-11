@@ -1,10 +1,16 @@
 EXPECTATIONS_MAP = {
+    # Single column expectations
     "Values to be unique": "expect_column_values_to_be_unique",
     "Values to not be null": "expect_column_values_to_not_be_null",
     "Values to be in set": "expect_column_values_to_be_in_set",
     "Values to be of type": "expect_column_values_to_be_of_type",
     "Values to be between": "expect_column_values_to_be_between",
-    "Value lengths to equal": "expect_column_value_lengths_to_equal"
+    "Value lengths to equal": "expect_column_value_lengths_to_equal",
+
+    # Multicolumn expectations
+    "Values from columns to be unique": "expect_multicolumn_values_to_be_unique",
+    "Values at first to be greater than second": "expect_column_pair_values_A_to_be_greater_than_B",
+    "Values from columns to be in set": "expect_column_pair_values_to_be_in_set"
 }
 NUMERIC_ONLY_EXPECTATIONS = [
     "Values to be between"
