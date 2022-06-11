@@ -181,7 +181,6 @@ def is_numeric_expectation(expectation: str) -> bool:
     :param expectation: String with the name of the expectation.
     :return: Boolean that tells the app if it is numeric.
     """
-    print("expectation", expectation, "set", get_non_numeric_only_expectations())
     return expectation not in get_non_numeric_only_expectations()
 
 

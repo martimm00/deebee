@@ -585,7 +585,8 @@ def set_callbacks(app) -> dash.Dash:
             Output("expectations_checklist_div", "style"),
             Output("no_expectations_div", "style"),
             Output("delete_expectation_button_div", "style"),
-            Output("expectation_set_name_input", "disabled")
+            Output("expectation_set_name_input", "disabled"),
+            Output("imported_datasets_dropdown", "disabled")
         ],
         Input("expectations_checklist", "options"),
         [
@@ -616,7 +617,7 @@ def set_callbacks(app) -> dash.Dash:
             checklist_div_style = hide_component(checklist_div_style)
             no_expectations_div_style = display_component(no_expectations_div_style)
             delete_expectations_div_style = hide_component(delete_expectations_div_style)
-            disabled_input = False
+            disabled_parameter = False
 
         # In case there are, hide the message and show the checklist
         else:
@@ -625,14 +626,15 @@ def set_callbacks(app) -> dash.Dash:
             delete_expectations_div_style = display_component(
                 delete_expectations_div_style
             )
-            disabled_input = True
+            disabled_parameter = True
 
         # Returning updated styles
         return (
             checklist_div_style,
             no_expectations_div_style,
             delete_expectations_div_style,
-            disabled_input
+            disabled_parameter,
+            disabled_parameter
         )
 
     @app.callback(
