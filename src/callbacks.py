@@ -6,9 +6,7 @@ import dash_bootstrap_components as dbc
 from pandas.core.dtypes.common import is_string_dtype, is_numeric_dtype
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
-from constants.path_constants import (
-    GREAT_EXPECTATIONS_PATH,
-)
+from constants.path_constants import GREAT_EXPECTATIONS_PATH
 from constants.great_expectations_constants import (
     TYPE,
     LENGTH,
@@ -19,6 +17,7 @@ from constants.great_expectations_constants import (
     SUPPORTED_GE_EXP_TYPES,
     EXPECTATION_CONJUNCTION,
     MULTICOLUMN_EXPECTATIONS_MAP,
+    MULTICOLUMN_EXP_NEEDS_GE_NAME,
     SINGLE_COLUMN_EXPECTATIONS_MAP,
 )
 
@@ -26,15 +25,6 @@ from objects.expectation_suite_name import ExpectationSuiteName
 
 from src.expectation_operations import is_expectation_set_name_valid
 from src.validation_operations import validate_dataset, move_validation_to_app_system
-from src.expectation_set_operations import (
-    is_numeric_expectation,
-    is_non_numeric_expectation,
-    write_expectation_in_config,
-    delete_expectation_in_config,
-    get_two_columns_expectations,
-    get_any_column_count_expectations,
-    check_existing_expectation_sets_integrity
-)
 from src.front_end_operations import (
     is_trigger,
     hide_component,
@@ -49,6 +39,15 @@ from src.utils import (
     list_has_one_item,
     infer_csv_separator,
     build_profile_report
+)
+from src.expectation_set_operations import (
+    is_numeric_expectation,
+    is_non_numeric_expectation,
+    write_expectation_in_config,
+    delete_expectation_in_config,
+    get_two_columns_expectations,
+    get_any_column_count_expectations,
+    check_existing_expectation_sets_integrity
 )
 from src.low_level_operations import (
     move,
@@ -655,7 +654,7 @@ def set_callbacks(app) -> dash.Dash:
             if selected_expectation in get_two_column_expectation_interface_names():
                 pair_style = display_component(pair_style)
                 checklist_style = hide_component(checklist_style)
-                if MULTICOLUMN_EXPECTATIONS_MAP[selected_expectation] == "expect_column_pair_values_A_to_be_greater_than_B":
+                if MULTICOLUMN_EXPECTATIONS_MAP[selected_expectation] == MULTICOLUMN_EXP_NEEDS_GE_NAME:
                     equal_style = display_component(equal_style)
             else:
                 pair_style = hide_component(pair_style)

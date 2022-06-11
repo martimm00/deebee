@@ -5,15 +5,15 @@ import dash_uploader as du
 import dash_bootstrap_components as dbc
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
-from constants.great_expectations_constants import (
-    SUPPORTED_GE_EXP_TYPES,
-    MULTICOLUMN_EXPECTATIONS_MAP,
-    SINGLE_COLUMN_EXPECTATIONS_MAP,
-)
 from constants.layout_shortcut_constants import (
     INPUT_STYLE,
     MAIN_COL_STYLE,
     CHECKLIST_DIV_STYLE
+)
+from constants.great_expectations_constants import (
+    SUPPORTED_GE_EXP_TYPES,
+    MULTICOLUMN_EXPECTATIONS_MAP,
+    SINGLE_COLUMN_EXPECTATIONS_MAP
 )
 
 
