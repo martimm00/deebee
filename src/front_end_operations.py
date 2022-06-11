@@ -3,7 +3,7 @@ import dash
 import webbrowser
 import dash_bootstrap_components as dbc
 
-from constants.great_expectations_constants import EXPECTATION_INTERFACE_NAME_DIVIDER
+from constants.great_expectations_constants import EXPECTATION_INTERFACE_SEPARATOR_STRING
 
 
 def open_in_browser(url: os.path) -> None:
@@ -181,7 +181,7 @@ def get_expectation_info_from_interface_name(
     :return: String with the name of the expectation, string with the name of the dataset
     column where it has to be applied.
     """
-    divider = EXPECTATION_INTERFACE_NAME_DIVIDER
+    divider = EXPECTATION_INTERFACE_SEPARATOR_STRING
     expectation_name = get_expectation_name_from_interface_name(
         expectation_interface_name, divider
     )

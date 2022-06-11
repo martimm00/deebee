@@ -629,21 +629,37 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     )
                                 ],
                                 justify="between",
-                                id="min_max_values_exp_param_div"
                             ),
                             dbc.ModalFooter(
                                 [
                                     dbc.Button(
-                                        "Add",
-                                        id="add_expectation_button",
+                                        "Multicolumn",
+                                        id="switch_to_multicolumn_expectations_button",
                                         color="secondary"
                                     ),
+                                ],
+                                id="switch_to_multicolumn_expectations_div",
+                            ),
+                            html.Div(
+                                [
                                     dbc.Button(
-                                        "Close",
-                                        id="close_expectation_definer_button",
+                                        "Single column",
+                                        id="switch_to_single_column_expectations_button",
                                         color="secondary"
-                                    )
-                                ]
+                                    ),
+                                ],
+                                id="switch_to_single_column_expectations_div",
+                                style={"display": "none"}
+                            ),
+                            dbc.Button(
+                                "Add",
+                                id="add_expectation_button",
+                                color="secondary"
+                            ),
+                            dbc.Button(
+                                "Close",
+                                id="close_expectation_definer_button",
+                                color="secondary"
                             )
                         ]
                     ),

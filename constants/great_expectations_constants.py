@@ -12,16 +12,10 @@ NUMERIC_ONLY_EXPECTATIONS = [
 NON_NUMERIC_ONLY_EXPECTATIONS = [
     "Value lengths to equal",
 ]
-EXPECTATION_INTERFACE_NAME_DIVIDER = "over"
-EXPECTATION_N_PARAMS = {
-    "expect_column_values_to_be_unique": 0,
-    "expect_column_values_to_not_be_null": 0,
-    "expect_column_values_to_be_in_set": 1,
-    "expect_column_value_lengths_to_equal": 1,
-    "expect_column_values_to_be_of_type": 1,
-    "expect_column_values_to_be_between": 2,
-}
+EXPECTATION_INTERFACE_SEPARATOR_STRING = "over"
 EXPECTATION_PARAMS = {
+
+    # Single column expectations
     "expect_column_values_to_be_unique": {},
     "expect_column_values_to_not_be_null": {},
     "expect_column_values_to_be_in_set": {
@@ -37,6 +31,21 @@ EXPECTATION_PARAMS = {
         "min_value": "int",
         "max_value": "int"
     },
+
+    # Multicolumn expectations
+    "expect_multicolumn_values_to_be_unique": {
+        "column_list": "list"
+    },
+    "expect_column_pair_values_A_to_be_greater_than_B": {
+        "column_A": "str",
+        "column_B": "str",
+        "or_equal": "bool"
+    },
+    "expect_column_pair_values_to_be_in_set": {
+        "column_A": "str",
+        "column_B": "str",
+        "value_pairs_set": "list"
+    }
 }
 SUPPORTED_GE_EXP_TYPES = [
     "int",

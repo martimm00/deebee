@@ -11,10 +11,6 @@ from constants.great_expectations_constants import (
 
 from src.utils import get_value
 from src.json_operations import from_json, to_json
-from src.expectation_parameters import (
-    extract_parameters,
-    check_number_of_params_is_correct,
-)
 from src.front_end_operations import (
     add_options_to_checklist,
     get_checklist_component,
@@ -103,38 +99,6 @@ def columns_used_in_expectation(expectations: list, expectation_name: str) -> li
     return columns
 
 
-def update_expectation_and_columns_if_necessary(
-    column: str,
-    expectation_and_columns: str,
-    expectation_interface_name: str,
-    expectation_parameters_str: str,
-) -> str:
-    """
-    As its name suggests, it updates expectations and columns stored data if there are
-    any valid changes.
-
-    :param column: Str with the selected column.
-    :param expectation_and_columns: JSON file that contains all currently set
-    expectations and its columns.
-    :param expectation_interface_name: Str with the selected expectation.
-    :param expectation_parameters_str: Str with all expectation parameters, separated by
-    a comma.
-
-    :return: JSON file with updated expectations and its columns to be stored.
-    """
-    if expectation_interface_name and column:
-
-        # Converting parameters from string to list
-        extracted_parameters = extract_parameters(expectation_parameters_str)
-        expectation_name = EXPECTATIONS_MAP[expectation_interface_name]
-        expectation_and_columns = (
-            update_expectation_and_columns_if_num_parameters_match(
-                column, expectation_and_columns, expectation_name, extracted_parameters
-            )
-        )
-    return expectation_and_columns
-
-
 def get_columns_compatible_with_expectation(
     dataset: pd.DataFrame, selected_expectation: str
 ) -> list:
@@ -161,43 +125,6 @@ def get_columns_compatible_with_expectation(
             if is_numeric_expectation(selected_expectation):
                 displayed_columns.append(column)
     return displayed_columns
-
-
-def update_expectation_and_columns_if_num_parameters_match(
-    column: str,
-    expectation_and_columns: str,
-    expectation_name: str,
-    extracted_parameters: list,
-) -> str:
-    """
-    Updates currently set expectation and its columns to be stored only if number of
-    parameters match.
-
-    :param column: Str with the name of the selected column.
-    :param expectation_and_columns: JSON file that contains all currently set
-    expectations and its columns.
-    :param expectation_name: Str with the selected expectation name.
-    :param extracted_parameters: List that contains all entered parameter split.
-
-    :return: JSON file with currently set expectations, the columns where they have to be
-    applied and the parameters (if any).
-    """
-    if check_number_of_params_is_correct(expectation_name, extracted_parameters):
-
-        # Depending on the expectation, parameters could not be
-        # a list, so they have to be extracted
-        if (
-            expectation_name == "expect_column_values_to_be_of_type"
-            or expectation_name == "expect_column_value_lengths_to_equal"
-        ):
-            extracted_parameters = get_value(extracted_parameters)
-        expectation_and_columns = update_columns_to_be_expected(
-            expectation_name,
-            column,
-            expectation_and_columns,
-            extracted_parameters,
-        )
-    return expectation_and_columns
 
 
 def remove_expectations_from_editor_added_expectations(
