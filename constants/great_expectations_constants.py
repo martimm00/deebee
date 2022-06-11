@@ -10,7 +10,7 @@ NUMERIC_ONLY_EXPECTATIONS = [
     "Values to be between"
 ]
 NON_NUMERIC_ONLY_EXPECTATIONS = [
-    "Lengths to equal",
+    "Value lengths to equal",
 ]
 EXPECTATION_INTERFACE_NAME_DIVIDER = "over"
 EXPECTATION_N_PARAMS = {

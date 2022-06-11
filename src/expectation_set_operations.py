@@ -2,6 +2,10 @@ import json
 from datetime import datetime
 
 from constants.defaults import EMPTY_DICT
+from constants.great_expectations_constants import (
+    NUMERIC_ONLY_EXPECTATIONS,
+    NON_NUMERIC_ONLY_EXPECTATIONS
+)
 from constants.expectation_set_constants import (
     PARAMETERS,
     LAST_EDITED,
@@ -152,3 +156,40 @@ def delete_expectation_in_config(
 
     with open(expectation_set_config_path, "w") as fp:
         json.dump(config_dict, fp)
+
+
+def get_numeric_only_expectations() -> list:
+    """
+    Returns a list with the names of numeric expectations.
+    :return: List of strings.
+    """
+    return NUMERIC_ONLY_EXPECTATIONS
+
+
+def get_non_numeric_only_expectations() -> list:
+    """
+    Returns a list with the names of non numeric expectations.
+    :return: List of strings.
+    """
+    return NON_NUMERIC_ONLY_EXPECTATIONS
+
+
+def is_numeric_expectation(expectation: str) -> bool:
+    """
+    Returns if the given expectation can be applied to numeric
+    values.
+    :param expectation: String with the name of the expectation.
+    :return: Boolean that tells the app if it is numeric.
+    """
+    print("expectation", expectation, "set", get_non_numeric_only_expectations())
+    return expectation not in get_non_numeric_only_expectations()
+
+
+def is_non_numeric_expectation(expectation: str) -> bool:
+    """
+    Returns if the given expectation can be applied to non- numeric
+    values.
+    :param expectation: String with the name of the expectation.
+    :return: Boolean that tells the app if it is non-numeric.
+    """
+    return expectation not in get_numeric_only_expectations()

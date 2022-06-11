@@ -3,6 +3,7 @@ from dash import dcc
 import great_expectations as ge
 from dash import Output, Input, State
 import dash_bootstrap_components as dbc
+from pandas.core.dtypes.common import is_string_dtype, is_numeric_dtype
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
 from constants.path_constants import (
@@ -25,6 +26,8 @@ from objects.expectation_suite_name import ExpectationSuiteName
 from src.expectation_operations import is_expectation_set_name_valid
 from src.validation_operations import validate_dataset, move_validation_to_app_system
 from src.expectation_set_operations import (
+    is_numeric_expectation,
+    is_non_numeric_expectation,
     write_expectation_in_config,
     delete_expectation_in_config,
     check_existing_expectation_sets_integrity
@@ -538,7 +541,7 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         [
-            Output("supported_expectations_dropdown", "value"),
+            Output("compatible_expectations_dropdown", "value"),
             Output("table_columns_dropdown", "value"),
             Output("type_exp_param_input", "value"),
             Output("length_exp_param_input", "value"),
@@ -642,7 +645,7 @@ def set_callbacks(app) -> dash.Dash:
         ],
         [
             Input("new_expectation_button", "n_clicks"),
-            Input("supported_expectations_dropdown", "value")
+            Input("compatible_expectations_dropdown", "value")
         ],
         [
             State("type_exp_param_div", "style"),
@@ -751,7 +754,7 @@ def set_callbacks(app) -> dash.Dash:
             Input("delete_expectation_button", "n_clicks")
         ],
         [
-            State("supported_expectations_dropdown", "value"),
+            State("compatible_expectations_dropdown", "value"),
             State("expectation_set_name_input", "value"),
             State("table_columns_dropdown", "value"),
             State("expectations_checklist", "options"),
@@ -833,6 +836,45 @@ def set_callbacks(app) -> dash.Dash:
             delete_expectation_in_config(expectation_set_name, column_names, expectation_ids)
 
         return current_expectations
+
+    @app.callback(
+        Output("compatible_expectations_dropdown", "options"),
+        [
+            Input("table_columns_dropdown", "value"),
+            Input("new_expectation_button", "n_clicks")
+        ],
+        State("imported_datasets_dropdown", "value"),
+    )
+    def get_compatible_expectations(
+        selected_column: str, new_expectation: int, dataset_name: str
+    ) -> list:
+        """
+        Returns only those expectations compatible with the dataset column type.
+
+        :param selected_column: String with the selected dataset column.
+        :param new_expectation: Number of clicks.
+        :param dataset_name: String with dataset name.
+
+        :return: List with compatible expectations.
+        """
+        # Getting all supported expectations
+        compatible_expectations = sorted(list(EXPECTATIONS_MAP.keys()))
+
+        # If any dataset column is selected, then get compatible expectations
+        if is_trigger("table_columns_dropdown") and selected_column:
+            dataset_path = get_imported_dataset_path(dataset_name)
+            separator = infer_csv_separator(dataset_path)
+            dataset = read_dataset(dataset_path, sep=separator, n_rows=5)
+            if is_numeric_dtype(dataset[selected_column]):
+                compatible_expectations = [
+                    e for e in compatible_expectations if is_numeric_expectation(e)
+                ]
+            elif is_string_dtype(dataset[selected_column]):
+                compatible_expectations = [
+                    e for e in compatible_expectations if is_non_numeric_expectation(e)
+                ]
+        return compatible_expectations
+
 
     @app.callback(
         [

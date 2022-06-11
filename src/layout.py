@@ -551,7 +551,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                             ),
                             html.H5("Select an expectation:"),
                             dcc.Dropdown(
-                                id="supported_expectations_dropdown",
+                                id="compatible_expectations_dropdown",
                                 options=sorted(list(EXPECTATIONS_MAP.keys())),
                                 style={"marginBottom": "20px"}
                             ),
