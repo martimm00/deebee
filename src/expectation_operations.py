@@ -4,7 +4,7 @@ from pandas.core.dtypes.common import is_string_dtype, is_numeric_dtype
 
 from constants.defaults import EMPTY_STRING
 from constants.great_expectations_constants import (
-    EXPECTATIONS_MAP,
+    SINGLE_COLUMN_EXPECTATIONS_MAP,
     NUMERIC_ONLY_EXPECTATIONS,
     NON_NUMERIC_ONLY_EXPECTATIONS
 )
@@ -19,7 +19,7 @@ from src.front_end_operations import (
 
 
 def remove_non_supported_expectations_from_expectation_suite(
-    expectation_suite, supported_expectations_id=EXPECTATIONS_MAP.values()
+    expectation_suite, supported_expectations_id=SINGLE_COLUMN_EXPECTATIONS_MAP.values()
 ) -> dict:
     """
     Removes expectations which are not supported by the app from the Expectation Suite
@@ -357,7 +357,7 @@ def remove_expectations_from_expectation_suite_loop(
         expectation_interface_name, column = get_expectation_info_from_interface_name(
             interface_expectation
         )
-        expectation_name = EXPECTATIONS_MAP[expectation_interface_name]
+        expectation_name = SINGLE_COLUMN_EXPECTATIONS_MAP[expectation_interface_name]
         set_expectations = get_expectation_suite_expectations(expectation_suite)
         look_for_selected_expectation_and_remove_it(
             expectation_suite, expectation_name, column, set_expectations

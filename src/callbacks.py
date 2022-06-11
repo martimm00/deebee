@@ -15,10 +15,11 @@ from constants.great_expectations_constants import (
     MIN_VALUE,
     MAX_VALUE,
     VALUE_SET,
-    EXPECTATIONS_MAP,
     EXPECTATION_PARAMS,
     SUPPORTED_GE_EXP_TYPES,
-    EXPECTATION_CONJUNCTION
+    EXPECTATION_CONJUNCTION,
+    MULTICOLUMN_EXPECTATIONS_MAP,
+    SINGLE_COLUMN_EXPECTATIONS_MAP,
 )
 
 from objects.expectation_suite_name import ExpectationSuiteName
@@ -30,6 +31,8 @@ from src.expectation_set_operations import (
     is_non_numeric_expectation,
     write_expectation_in_config,
     delete_expectation_in_config,
+    get_two_columns_expectations,
+    get_any_column_count_expectations,
     check_existing_expectation_sets_integrity
 )
 from src.front_end_operations import (
@@ -494,21 +497,21 @@ def set_callbacks(app) -> dash.Dash:
         return set_name + ".json" in expectation_set_names_in_use
 
     @app.callback(
-        Output("expectation_definer_modal", "is_open"),
+        Output("single_column_expectation_definer_modal", "is_open"),
         [
-            Input("new_expectation_button", "n_clicks"),
-            Input("add_expectation_button", "n_clicks"),
-            Input("close_expectation_definer_button", "n_clicks")
+            Input("new_single_column_expectation_button", "n_clicks"),
+            Input("add_single_column_expectation_button", "n_clicks"),
+            Input("close_single_column_expectation_definer_button", "n_clicks")
         ],
         [
             State("expectation_set_name_input", "value"),
             State("imported_datasets_dropdown", "value"),
             State("expectations_checklist", "options"),
-            State("expectation_definer_modal", "is_open")
+            State("single_column_expectation_definer_modal", "is_open")
         ],
         prevent_initial_call=True
     )
-    def toggle_expectation_definer(
+    def toggle_single_column_expectation_definer(
         new_expectation: int,
         add_expectation: int,
         close_definer: int,
@@ -531,13 +534,139 @@ def set_callbacks(app) -> dash.Dash:
 
         :return: Bool.
         """
-        if is_trigger("new_expectation_button"):
+        if is_trigger("new_single_column_expectation_button"):
             if is_expectation_set_name_valid(set_name):
                 if (not is_expectation_set_name_in_use(set_name) or current_expectations) and dataset_name:
                     modal_state = True
         else:
             modal_state = False
         return modal_state
+
+    @app.callback(
+        Output("multicolumn_expectation_definer_modal", "is_open"),
+        [
+            Input("new_multicolumn_expectation_button", "n_clicks"),
+            Input("add_multicolumn_expectation_button", "n_clicks"),
+            Input("close_multicolumn_expectation_definer_button", "n_clicks")
+        ],
+        [
+            State("expectation_set_name_input", "value"),
+            State("imported_datasets_dropdown", "value"),
+            State("expectations_checklist", "options"),
+            State("multicolumn_expectation_definer_modal", "is_open")
+        ],
+        prevent_initial_call=True
+    )
+    def toggle_multicolumn_expectation_definer(
+        new_expectation: int,
+        add_expectation: int,
+        close_definer: int,
+        set_name: str,
+        dataset_name: str,
+        current_expectations: list,
+        modal_state
+    ) -> bool:
+        """
+        Opens the expectation definer when the button is clicked, only if conditions
+        match.
+
+        :param new_expectation: Number of clicks.
+        :param add_expectation: Number of clicks.
+        :param close_definer: Number of clicks.
+        :param set_name: Current name typed by the user.
+        :param dataset_name: Currently selected dataset or table.
+        :param current_expectations: List with current expectations.
+        :param modal_state: Current modal state.
+
+        :return: Bool.
+        """
+        if is_trigger("new_multicolumn_expectation_button"):
+            if is_expectation_set_name_valid(set_name):
+                if (not is_expectation_set_name_in_use(set_name) or current_expectations) and dataset_name:
+                    modal_state = True
+        else:
+            modal_state = False
+        return modal_state
+
+    @app.callback(
+        Output("select_columns_text_div", "style"),
+        Input("compatible_multicolumn_expectations_dropdown", "value"),
+        State("select_columns_text_div", "style")
+    )
+    def display_or_hide_text(selected_expectation: str, div_style: dict) -> dict:
+        if is_trigger("compatible_multicolumn_expectations_dropdown"):
+            if selected_expectation:
+                div_style = display_component(div_style)
+            else:
+                div_style = hide_component(div_style)
+        return div_style
+
+    def get_two_column_expectation_interface_names() -> list:
+        """
+        Returns a list with interface names of those expectations that work with two
+        table columns.
+
+        :return: List with interface names.
+        """
+        names = list()
+        for interface_name in SINGLE_COLUMN_EXPECTATIONS_MAP:
+            if SINGLE_COLUMN_EXPECTATIONS_MAP[interface_name] in get_two_columns_expectations():
+                names.append(interface_name)
+        return names
+
+    def get_any_column_count_expectation_interface_names() -> list:
+        """
+        Returns a list with interface names of those expectations that work with any
+        table column count.
+
+        :return: List with interface names.
+        """
+        names = list()
+        for interface_name in SINGLE_COLUMN_EXPECTATIONS_MAP:
+            if SINGLE_COLUMN_EXPECTATIONS_MAP[interface_name] in get_any_column_count_expectations():
+                names.append(interface_name)
+        return names
+
+    @app.callback(
+        [
+            Output("table_a_and_b_columns_div", "style"),
+            Output("table_columns_checklist_div", "style"),
+            Output("greater_or_equal_div", "style")
+        ],
+        Input("compatible_multicolumn_expectations_dropdown", "value"),
+        [
+            State("table_a_and_b_columns_div", "style"),
+            State("table_columns_checklist_div", "style"),
+            State("greater_or_equal_div", "style")
+        ],
+    )
+    def toggle_expectation_column_inputs(
+        selected_expectation: str,
+        pair_style: dict,
+        checklist_style: dict,
+        equal_style: dict
+    ) -> (dict, dict):
+        equal_style = hide_component(equal_style)
+
+        # If the has selected an expectation
+        if is_trigger("compatible_multicolumn_expectations_dropdown") and selected_expectation:
+
+            # If the expectation needs two table columns to work
+            if selected_expectation in get_two_column_expectation_interface_names():
+                pair_style = display_component(pair_style)
+                checklist_style = hide_component(checklist_style)
+                if MULTICOLUMN_EXPECTATIONS_MAP[selected_expectation] == "expect_column_pair_values_A_to_be_greater_than_B":
+                    equal_style = display_component(equal_style)
+            else:
+                pair_style = hide_component(pair_style)
+                checklist_style = display_component(checklist_style)
+
+        # If no expectation is selected, hide all column inputs
+        else:
+            pair_style = hide_component(pair_style)
+            checklist_style = hide_component(checklist_style)
+
+        return pair_style, checklist_style, equal_style
 
     @app.callback(
         [
@@ -550,7 +679,7 @@ def set_callbacks(app) -> dash.Dash:
             Output("max_value_exp_param_input", "value")
         ],
         [
-            Input("new_expectation_button", "n_clicks")
+            Input("new_single_column_expectation_button", "n_clicks")
         ]
     )
     def clear_values_at_expectation_definer(new_expectation: int) -> (str, str):
@@ -646,7 +775,7 @@ def set_callbacks(app) -> dash.Dash:
             Output("max_value_exp_param_div", "style")
         ],
         [
-            Input("new_expectation_button", "n_clicks"),
+            Input("new_single_column_expectation_button", "n_clicks"),
             Input("compatible_single_column_expectations_dropdown", "value")
         ],
         [
@@ -688,11 +817,11 @@ def set_callbacks(app) -> dash.Dash:
             MAX_VALUE: max_value_div_style
         }
 
-        if is_trigger("new_expectation_button") or not selected_expectation:
+        if is_trigger("new_single_column_expectation_button") or not selected_expectation:
             expectation_params = EMPTY_LIST
 
         else:
-            expectation_id = EXPECTATIONS_MAP[selected_expectation]
+            expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[selected_expectation]
             expectation_params = EXPECTATION_PARAMS[expectation_id]
 
         for param in params_div_map:
@@ -752,7 +881,7 @@ def set_callbacks(app) -> dash.Dash:
         Output("expectations_checklist", "options"),
         [
             Input("open_expectation_set_definer_button", "n_clicks"),
-            Input("add_expectation_button", "n_clicks"),
+            Input("add_single_column_expectation_button", "n_clicks"),
             Input("delete_expectation_button", "n_clicks")
         ],
         [
@@ -786,7 +915,7 @@ def set_callbacks(app) -> dash.Dash:
     ) -> (list, dict):
         if is_trigger("open_expectation_set_definer_button"):
             current_expectations = list()
-        elif is_trigger("add_expectation_button"):
+        elif is_trigger("add_single_column_expectation_button"):
             params_map = {
                 TYPE: type_input,
                 LENGTH: length_input,
@@ -796,7 +925,7 @@ def set_callbacks(app) -> dash.Dash:
             }
             all_params_are_set = True
 
-            expectation_id = EXPECTATIONS_MAP[selected_expectation_name]
+            expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[selected_expectation_name]
             expectation_params = EXPECTATION_PARAMS[expectation_id]
 
             params_of_interest = dict()
@@ -829,7 +958,7 @@ def set_callbacks(app) -> dash.Dash:
                 column_names.append(interface_name.split(" ")[-1])
 
                 # Getting the expectations to be removed
-                expectation_ids.append(EXPECTATIONS_MAP[" ".join(interface_name.split(" ")[:-2])])
+                expectation_ids.append(SINGLE_COLUMN_EXPECTATIONS_MAP[" ".join(interface_name.split(" ")[:-2])])
 
                 # Removing the expectations from the interface
                 current_expectations.remove(interface_name)
@@ -843,7 +972,7 @@ def set_callbacks(app) -> dash.Dash:
         Output("compatible_single_column_expectations_dropdown", "options"),
         [
             Input("table_columns_dropdown", "value"),
-            Input("new_expectation_button", "n_clicks")
+            Input("new_single_column_expectation_button", "n_clicks")
         ],
         State("imported_datasets_dropdown", "value"),
     )
@@ -860,7 +989,7 @@ def set_callbacks(app) -> dash.Dash:
         :return: List with compatible expectations.
         """
         # Getting all supported expectations
-        compatible_expectations = sorted(list(EXPECTATIONS_MAP.keys()))
+        compatible_expectations = sorted(list(SINGLE_COLUMN_EXPECTATIONS_MAP.keys()))
 
         # If any dataset column is selected, then get compatible expectations
         if is_trigger("table_columns_dropdown") and selected_column:
@@ -876,7 +1005,6 @@ def set_callbacks(app) -> dash.Dash:
                     e for e in compatible_expectations if is_non_numeric_expectation(e)
                 ]
         return compatible_expectations
-
 
     @app.callback(
         [

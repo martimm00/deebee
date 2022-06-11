@@ -4,7 +4,8 @@ from datetime import datetime
 from constants.defaults import EMPTY_DICT
 from constants.great_expectations_constants import (
     NUMERIC_ONLY_EXPECTATIONS,
-    NON_NUMERIC_ONLY_EXPECTATIONS
+    NON_NUMERIC_ONLY_EXPECTATIONS,
+    MULTICOLUMN_EXPECTATIONS_N_COLUMNS
 )
 from constants.expectation_set_constants import (
     PARAMETERS,
@@ -192,3 +193,29 @@ def is_non_numeric_expectation(expectation: str) -> bool:
     :return: Boolean that tells the app if it is non-numeric.
     """
     return expectation not in get_numeric_only_expectations()
+
+
+def get_two_columns_expectations() -> list:
+    """
+    Returns the ID of those expectations that work with two table columns.
+
+    :return: List with expectation IDs.
+    """
+    return [
+        e
+        for e in MULTICOLUMN_EXPECTATIONS_N_COLUMNS
+        if MULTICOLUMN_EXPECTATIONS_N_COLUMNS[e] == 2
+    ]
+
+
+def get_any_column_count_expectations() -> list:
+    """
+    Returns the ID of those expectations that work with any number of table columns.
+
+    :return: List with expectation IDs.
+    """
+    return [
+        e
+        for e in MULTICOLUMN_EXPECTATIONS_N_COLUMNS
+        if MULTICOLUMN_EXPECTATIONS_N_COLUMNS[e] is None
+    ]

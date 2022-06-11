@@ -45,8 +45,6 @@ def apply_expectation_to_dataset(
     parameters["column"] = column_name
     parameters["mostly"] = confidence/100
 
-    print(expectation_id)
-
     getattr(batch, expectation_id)(**parameters)
 
 
