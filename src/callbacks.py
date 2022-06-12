@@ -1,3 +1,5 @@
+import ast
+
 import dash
 from dash import dcc
 import great_expectations as ge
@@ -10,14 +12,18 @@ from constants.path_constants import GREAT_EXPECTATIONS_PATH
 from constants.great_expectations_constants import (
     TYPE,
     LENGTH,
+    COLUMN_LIST,
+    OR_EQUAL,
+    COLUMN_A,
+    COLUMN_B,
     MIN_VALUE,
     MAX_VALUE,
-    VALUE_SET,
+    VALUE_SET_MULTI,
+    VALUE_SET_SINGLE,
     EXPECTATION_PARAMS,
     SUPPORTED_GE_EXP_TYPES,
     EXPECTATION_CONJUNCTION,
     MULTICOLUMN_EXPECTATIONS_MAP,
-    MULTICOLUMN_EXP_NEEDS_GE_NAME,
     SINGLE_COLUMN_EXPECTATIONS_MAP,
 )
 
@@ -43,10 +49,11 @@ from src.utils import (
 from src.expectation_set_operations import (
     is_numeric_expectation,
     is_non_numeric_expectation,
-    write_expectation_in_config,
     delete_expectation_in_config,
     get_two_columns_expectations,
     get_any_column_count_expectations,
+    write_multicolumn_expectation_in_config,
+    write_single_column_expectation_in_config,
     check_existing_expectation_sets_integrity
 )
 from src.low_level_operations import (
@@ -628,77 +635,63 @@ def set_callbacks(app) -> dash.Dash:
 
     @app.callback(
         [
-            Output("table_a_and_b_columns_div", "style"),
-            Output("table_columns_checklist_div", "style"),
-            Output("greater_or_equal_div", "style")
-        ],
-        Input("compatible_multicolumn_expectations_dropdown", "value"),
-        [
-            State("table_a_and_b_columns_div", "style"),
-            State("table_columns_checklist_div", "style"),
-            State("greater_or_equal_div", "style")
-        ],
-    )
-    def toggle_expectation_column_inputs(
-        selected_expectation: str,
-        pair_style: dict,
-        checklist_style: dict,
-        equal_style: dict
-    ) -> (dict, dict):
-        equal_style = hide_component(equal_style)
-
-        # If the has selected an expectation
-        if is_trigger("compatible_multicolumn_expectations_dropdown") and selected_expectation:
-
-            # If the expectation needs two table columns to work
-            if selected_expectation in get_two_column_expectation_interface_names():
-                pair_style = display_component(pair_style)
-                checklist_style = hide_component(checklist_style)
-                if MULTICOLUMN_EXPECTATIONS_MAP[selected_expectation] == MULTICOLUMN_EXP_NEEDS_GE_NAME:
-                    equal_style = display_component(equal_style)
-            else:
-                pair_style = hide_component(pair_style)
-                checklist_style = display_component(checklist_style)
-
-        # If no expectation is selected, hide all column inputs
-        else:
-            pair_style = hide_component(pair_style)
-            checklist_style = hide_component(checklist_style)
-
-        return pair_style, checklist_style, equal_style
-
-    @app.callback(
-        [
             Output("compatible_single_column_expectations_dropdown", "value"),
+            Output("compatible_multicolumn_expectations_dropdown", "value"),
             Output("table_columns_dropdown", "value"),
             Output("type_exp_param_input", "value"),
             Output("length_exp_param_input", "value"),
             Output("values_single_column_exp_param_input", "value"),
             Output("min_value_exp_param_input", "value"),
-            Output("max_value_exp_param_input", "value")
+            Output("max_value_exp_param_input", "value"),
+            Output("table_column_a", "value"),
+            Output("table_column_b", "value"),
+            Output("values_multicolumn_exp_param_input", "value"),
+            Output("or_equal_checklist", "value"),
+            Output("table_columns_checklist", "value")
         ],
         [
-            Input("new_single_column_expectation_button", "n_clicks")
+            Input("new_single_column_expectation_button", "n_clicks"),
+            Input("new_multicolumn_expectation_button", "n_clicks")
         ]
     )
-    def clear_values_at_expectation_definer(new_expectation: int) -> (str, str):
+    def clear_values_at_expectation_definer(
+        new_single: int, new_multi: int
+    ) -> (str, str):
         """
         Returns two empty strings to clear dropdown selections.
+
+        :param new_single: Number of clicks.
+        :param new_multi: Number of clicks.
+
+        :return: Empty elements to clear all inputs.
         """
-        return [EMPTY_STRING] * 7
+        return [EMPTY_STRING] * 11 + [EMPTY_LIST] * 2
 
     @app.callback(
-        Output("table_columns_dropdown", "options"),
-        Input("imported_datasets_dropdown", "value")
+        [
+            Output("table_columns_dropdown", "options"),
+            Output("table_columns_checklist", "options"),
+            Output("table_column_a", "options"),
+            Output("table_column_b", "options")
+        ],
+        [
+            Input("imported_datasets_dropdown", "value"),
+            Input("table_column_a", "value"),
+            Input("table_column_b", "value")
+        ]
     )
-    def find_available_table_columns(dataset_name: str) -> list:
+    def find_available_table_columns(
+        dataset_name: str, selected_a_column: str, selected_b_column: str
+    ) -> (list, list, list, list):
         """
         Finds table columns once the user selects one dataset to create expectations on.
 
         :param dataset_name: String with the name of the selected dataset.
+        :param selected_a_column: String with the name of selected A table column.
+        :param selected_b_column: String with the name of selected B table column.
 
-        :return: List with dataset columns, but in case there is no selected dataset, it
-        returns an empty list.
+        :return: Lists with dataset columns, but in case there is no selected dataset, it
+        returns empty lists.
         """
         table_columns = EMPTY_LIST
         if dataset_name:
@@ -706,7 +699,12 @@ def set_callbacks(app) -> dash.Dash:
             sep = infer_csv_separator(dataset_path)
             table = read_dataset(dataset_path, n_rows=2, sep=sep)
             table_columns = table.columns.tolist()
-        return table_columns
+
+        table_column_a_options = [tc for tc in table_columns if tc != selected_b_column]
+        table_column_b_options = [tc for tc in table_columns if tc != selected_a_column]
+        return (
+            table_columns, table_columns, table_column_a_options, table_column_b_options
+        )
 
     @app.callback(
         [
@@ -786,7 +784,7 @@ def set_callbacks(app) -> dash.Dash:
         ],
         prevent_initial_call=True
     )
-    def show_expectation_parameter_inputs(
+    def show_single_column_expectation_parameter_inputs(
         new_expectation: int,
         selected_expectation: str,
         type_div_style: dict,
@@ -794,7 +792,7 @@ def set_callbacks(app) -> dash.Dash:
         values_div_style: dict,
         min_value_div_style: dict,
         max_value_div_style: dict,
-    ) -> (dict, dict, dict, dict):
+    ) -> (dict, dict, dict, dict, dict):
         """
         Shows or hides Divs that are meant to be the input for expectation parameters.
 
@@ -811,7 +809,7 @@ def set_callbacks(app) -> dash.Dash:
         params_div_map = {
             TYPE: type_div_style,
             LENGTH: length_div_style,
-            VALUE_SET: values_div_style,
+            VALUE_SET_SINGLE: values_div_style,
             MIN_VALUE: min_value_div_style,
             MAX_VALUE: max_value_div_style
         }
@@ -831,12 +829,77 @@ def set_callbacks(app) -> dash.Dash:
 
         return list(params_div_map.values())
 
-    def parse_parameter(param_name: str, value: str) -> any or None:
+    @app.callback(
+        [
+            Output("table_a_column_div", "style"),
+            Output("table_b_column_div", "style"),
+            Output("or_equal_div", "style"),
+            Output("table_columns_checklist_div", "style"),
+            Output("values_multicolumn_exp_param_div", "style"),
+        ],
+        [
+            Input("new_multicolumn_expectation_button", "n_clicks"),
+            Input("compatible_multicolumn_expectations_dropdown", "value")
+        ],
+        [
+            State("table_a_column_div", "style"),
+            State("table_b_column_div", "style"),
+            State("or_equal_div", "style"),
+            State("table_columns_checklist_div", "style"),
+            State("values_multicolumn_exp_param_div", "style"),
+        ],
+        prevent_initial_call=True
+    )
+    def show_multicolumn_expectation_parameter_inputs(
+        new_expectation: int,
+        selected_expectation: str,
+        column_a_style: dict,
+        column_b_style: dict,
+        or_equal_style: dict,
+        columns_checklist_style: dict,
+        values_div_style: dict,
+    ) -> (dict, dict, dict, dict, dict):
+        """
+        Shows or hides Divs that are meant to be the input for expectation parameters.
+
+        :param new_expectation: Number of clicks.
+        :param selected_expectation: String with the expectation that the user selected.
+        :param column_a_style: Component style.
+        :param column_b_style: Component style.
+        :param or_equal_style: Component style.
+        :param columns_checklist_style: Component style.
+        :param values_div_style: Component style.
+
+        :return: Dictionaries with styles for the mentioned Divs.
+        """
+        params_div_map = {
+            COLUMN_A: column_a_style,
+            COLUMN_B: column_b_style,
+            OR_EQUAL: or_equal_style,
+            COLUMN_LIST: columns_checklist_style,
+            VALUE_SET_MULTI: values_div_style,
+        }
+        if is_trigger("new_multicolumn_expectation_button") or not selected_expectation:
+            expectation_params = EMPTY_LIST
+
+        else:
+            expectation_id = MULTICOLUMN_EXPECTATIONS_MAP[selected_expectation]
+            expectation_params = EXPECTATION_PARAMS[expectation_id]
+
+        for param in params_div_map:
+            if param in expectation_params:
+                params_div_map[param] = display_component(params_div_map[param])
+            else:
+                params_div_map[param] = hide_component(params_div_map[param])
+
+        return list(params_div_map.values())
+
+    def parse_parameter(param_name: str, value) -> any or None:
         """
         Returns a parsed parameter in case it is correct. If not, it returns None.
 
         :param param_name: String with the name of the parameter.
-        :param value: String with non-parsed value given to the parameter.
+        :param value: Non-parsed value given to the parameter.
         """
         parsed_param = None
         if param_name == TYPE:
@@ -845,8 +908,8 @@ def set_callbacks(app) -> dash.Dash:
         elif param_name == LENGTH:
             if value.isnumeric():
                 parsed_param = value
-        elif param_name == VALUE_SET:
-            value = value.replace(" ", "")
+        elif param_name == VALUE_SET_SINGLE:
+            value = value.strip(" ")
             parsed_param = value.split(",")
             for i in range(len(parsed_param)):
                 if parsed_param[i].isnumeric():
@@ -862,29 +925,62 @@ def set_callbacks(app) -> dash.Dash:
                 parsed_param = float(value)
             except ValueError:
                 pass
+        elif param_name == VALUE_SET_MULTI:
+            value = value.strip(" ")
+            value = value.split("],")
+            value = [
+                pair.strip("[").strip("]") for pair in value
+            ]
+            value = [pair.split(",") for pair in value]
+            if not is_list_empty(value):
+                if all([len(pair) == 2 for pair in value]):
+                    parsed_param = value
+                    for i in range(len(value)):
+                        for j in range(2):
+                            parsed_param[i][j] = parsed_param[i][j].strip("'")
+                            if parsed_param[i][j].isnumeric():
+                                parsed_param[i][j] = int(parsed_param[i][j])
+                            else:
+                                try:
+                                    parsed_param[i][j] = float(parsed_param[i][j])
+                                except ValueError:
+                                    pass
+                    parsed_param = [tuple(pair) for pair in parsed_param]
+        elif param_name == OR_EQUAL:
+            parsed_param = False if is_list_empty(value) else True
         return parsed_param
 
-    def build_expectation_interface_name(expectation_name: str, column_name: str) -> str:
+    def build_expectation_interface_name(
+        expectation_name: str, column_names: list
+    ) -> str:
         """
         Builds expectation interface name from expectation name and column name.
 
         :param expectation_name: String with expectation name.
-        :param column_name: String with column name.
+        :param column_names: List with column names.
 
         :return: String with interface name.
         """
         spacer = " " if EXPECTATION_CONJUNCTION else ""
-        return expectation_name + spacer + EXPECTATION_CONJUNCTION + spacer + column_name
+        interface_name = expectation_name + spacer + EXPECTATION_CONJUNCTION + spacer
+
+        interface_name += column_names[0]
+        for i in range(1, len(column_names)):
+            interface_name += ", " + column_names[i]
+
+        return interface_name
 
     @app.callback(
         Output("expectations_checklist", "options"),
         [
             Input("open_expectation_set_definer_button", "n_clicks"),
             Input("add_single_column_expectation_button", "n_clicks"),
+            Input("add_multicolumn_expectation_button", "n_clicks"),
             Input("delete_expectation_button", "n_clicks")
         ],
         [
             State("compatible_single_column_expectations_dropdown", "value"),
+            State("compatible_multicolumn_expectations_dropdown", "value"),
             State("expectation_set_name_input", "value"),
             State("table_columns_dropdown", "value"),
             State("expectations_checklist", "options"),
@@ -894,23 +990,34 @@ def set_callbacks(app) -> dash.Dash:
             State("values_single_column_exp_param_input", "value"),
             State("min_value_exp_param_input", "value"),
             State("max_value_exp_param_input", "value"),
-
+            State("table_column_a", "value"),
+            State("table_column_b", "value"),
+            State("or_equal_checklist", "value"),
+            State("table_columns_checklist", "value"),
+            State("values_multicolumn_exp_param_input", "value")
         ]
     )
     def add_new_expectation(
         open_set_definer: int,
-        add_expectation: int,
+        add_single_column_expectation: int,
+        add_multicolumn_expectation: int,
         delete_expectation: int,
-        selected_expectation_name: str,
+        selected_single_column_expectation_name: str,
+        selected_multicolumn_expectation_name: str,
         expectation_set_name: str,
         selected_table_column: str,
         current_expectations: list,
         selected_expectations: list,
         type_input: str,
         length_input: str,
-        values_input: str,
+        values_single_input: str,
         min_value_input: str,
         max_value_input: str,
+        table_column_a: str,
+        table_column_b: str,
+        or_equal: list,
+        selected_table_columns: list,
+        values_multi_input: str
     ) -> (list, dict):
         if is_trigger("open_expectation_set_definer_button"):
             current_expectations = list()
@@ -918,13 +1025,13 @@ def set_callbacks(app) -> dash.Dash:
             params_map = {
                 TYPE: type_input,
                 LENGTH: length_input,
-                VALUE_SET: values_input,
+                VALUE_SET_SINGLE: values_single_input,
                 MIN_VALUE: min_value_input,
                 MAX_VALUE: max_value_input
             }
             all_params_are_set = True
 
-            expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[selected_expectation_name]
+            expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[selected_single_column_expectation_name]
             expectation_params = EXPECTATION_PARAMS[expectation_id]
 
             params_of_interest = dict()
@@ -940,11 +1047,59 @@ def set_callbacks(app) -> dash.Dash:
                     if params_of_interest[MIN_VALUE] > params_of_interest[MAX_VALUE]:
                         all_params_are_set = False
             if all_params_are_set:
-                write_expectation_in_config(
+                write_single_column_expectation_in_config(
                     expectation_set_name, selected_table_column, expectation_id, params_of_interest
                 )
                 expectation_interface_name = build_expectation_interface_name(
-                    selected_expectation_name, selected_table_column
+                    selected_single_column_expectation_name, [selected_table_column]
+                )
+                current_expectations.append(expectation_interface_name)
+
+        elif is_trigger("add_multicolumn_expectation_button"):
+            params_map = {
+                COLUMN_A: table_column_a,
+                COLUMN_B: table_column_b,
+                OR_EQUAL: or_equal,
+                COLUMN_LIST: selected_table_columns,
+                VALUE_SET_MULTI: values_multi_input,
+            }
+            all_params_are_set = True
+
+            expectation_id = MULTICOLUMN_EXPECTATIONS_MAP[
+                selected_multicolumn_expectation_name
+            ]
+            expectation_params = EXPECTATION_PARAMS[expectation_id]
+
+            params_of_interest = dict()
+            for param in expectation_params:
+                if "column" not in param:
+                    parsed_param = parse_parameter(param, params_map[param])
+                    params_of_interest[param] = parsed_param
+                    if parsed_param is None:
+                        print("param", param, "is", parsed_param)
+                        all_params_are_set = False
+
+            if COLUMN_A in expectation_params and COLUMN_B in expectation_params:
+                if not params_map[COLUMN_A] or not params_map[COLUMN_B]:
+                    print("there is no column A and B param")
+                    all_params_are_set = False
+
+            if COLUMN_LIST in expectation_params:
+                if is_list_empty(params_map[COLUMN_LIST]):
+                    print("there is no column list param")
+                    all_params_are_set = False
+
+            if all_params_are_set:
+                print("all params are set")
+                if not is_list_empty(selected_table_columns):
+                    table_columns = selected_table_columns
+                else:
+                    table_columns = [table_column_a, table_column_b]
+                write_multicolumn_expectation_in_config(
+                    expectation_set_name, table_columns, expectation_id, params_of_interest
+                )
+                expectation_interface_name = build_expectation_interface_name(
+                    selected_multicolumn_expectation_name, list(table_columns)
                 )
                 current_expectations.append(expectation_interface_name)
 

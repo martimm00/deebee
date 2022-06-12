@@ -4,7 +4,7 @@ MAIN_COL_STYLE = {
     "border": "3px black solid",
     "borderRadius": "20px",
     "margin": "10px",
-    "backgroundColor": "#e3e3e3",
+    "backgroundColor": "#e3e3e3"
 }
 CHECKLIST_DIV_STYLE = {
     "marginTop": "20px",
@@ -16,7 +16,7 @@ CHECKLIST_DIV_STYLE = {
     "backgroundColor": "#fff",
     "border": "3px black solid",
     "borderRadius": "20px",
-    "overflow": "scroll",
+    "overflow": "scroll"
 }
 INPUT_STYLE = {
     "height": "38px",

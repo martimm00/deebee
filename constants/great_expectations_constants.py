@@ -67,11 +67,19 @@ SUPPORTED_GE_EXP_TYPES = [
 EXPECTATION_CONJUNCTION = "over"
 
 # Expectation parameter constants
+# Single column expectations
 TYPE = "type_"
-VALUE_SET = "value_set"
+VALUE_SET_SINGLE = "value_set"
 LENGTH = "value"
 MIN_VALUE = "min_value"
 MAX_VALUE = "max_value"
+
+# Multicolumn expectations
+COLUMN_A = "column_A"
+COLUMN_B = "column_B"
+COLUMN_LIST = "column_list"
+OR_EQUAL = "or_equal"
+VALUE_SET_MULTI = "value_pairs_set"
 
 # validation_operations::save_validation constants
 BATCH_KWARGS = "batch_kwargs"

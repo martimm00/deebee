@@ -12,7 +12,8 @@ from constants.expectation_set_constants import (
     LAST_EDITED,
     EXPECTATIONS,
     EXPECTATION_NAME,
-    EXPECTATION_SET_NAME
+    EXPECTATION_SET_NAME,
+    MULTICOLUMN_CONFIG_SEPARATOR
 )
 
 from src.low_level_operations import (
@@ -94,7 +95,7 @@ def check_existing_expectation_sets_integrity() -> None:
     check_all_expectation_sets_are_not_empty()
 
 
-def write_expectation_in_config(
+def write_single_column_expectation_in_config(
     expectation_set_name: str,
     column_name: str,
     expectation_id: str,
@@ -124,6 +125,43 @@ def write_expectation_in_config(
 
     expectation_content = get_expectation_config(expectation_id, parameters_dict)
     config_dict[EXPECTATIONS][column_name].append(expectation_content)
+
+    with open(expectation_set_path, "w") as fp:
+        json.dump(config_dict, fp)
+
+
+def write_multicolumn_expectation_in_config(
+    expectation_set_name: str,
+    column_names: list,
+    expectation_id: str,
+    parameters_dict: dict
+) -> None:
+    """
+    This function creates a new file to write down a configuration for an expectation
+    set, or opens a created file to append new expectations and their parameters.
+
+    :param expectation_set_name: String with the name of the expectation set.
+    :param column_names: String with the name of the selected table column, where the
+    expectation will have to be applied to.
+    :param expectation_id: String with the name of the new expectation to be added.
+    :param parameters_dict: Dictionary with parameters of this new expectation.
+    """
+    expectation_set_path = get_expectation_set_path(expectation_set_name)
+    if not exists_path(expectation_set_path):
+        empty_expectation_set_content = get_empty_expectation_set_content(expectation_set_name)
+        with open(expectation_set_path, "w") as fp:
+            json.dump(empty_expectation_set_content, fp)
+
+    # Getting current expectation set configuration
+    config_dict = get_expectation_set_config(expectation_set_name)
+
+    column_names = MULTICOLUMN_CONFIG_SEPARATOR.join(column_names)
+
+    if column_names not in config_dict[EXPECTATIONS]:
+        config_dict[EXPECTATIONS][column_names] = list()
+
+    expectation_content = get_expectation_config(expectation_id, parameters_dict)
+    config_dict[EXPECTATIONS][column_names].append(expectation_content)
 
     with open(expectation_set_path, "w") as fp:
         json.dump(config_dict, fp)

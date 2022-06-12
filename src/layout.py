@@ -687,49 +687,73 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     dcc.Dropdown(
                                         id="table_column_a",
                                         options=EMPTY_LIST,
-                                        value=EMPTY_STRING
-                                    ),
+                                        value=EMPTY_STRING,
+                                        placeholder="Column A"
+                                    )
+                                ],
+                                id="table_a_column_div",
+                                style={"display": "none"}
+                            ),
+                            html.Div(
+                                [
                                     dcc.Dropdown(
                                         id="table_column_b",
                                         options=EMPTY_LIST,
-                                        value=EMPTY_STRING
+                                        value=EMPTY_STRING,
+                                        placeholder="Column B"
                                     )
                                 ],
-                                id="table_a_and_b_columns_div",
-                                style={"display": "none"}
+                                id="table_b_column_div",
+                                style={"display": "none", "marginTop": "10px"}
                             ),
                             html.Div(
                                 [
                                     dcc.Checklist(
                                         value=EMPTY_LIST,
-                                        options=["Greater or equal"],
-                                        id="greater_or_equal_checklist"
+                                        options=["Or equal"],
+                                        id="or_equal_checklist",
+                                        labelStyle={"display": "block"},
+                                        inputStyle={"marginRight": "15px"}
                                     )
                                 ],
-                                id="greater_or_equal_div",
-                                style={"display": "none"}
+                                id="or_equal_div",
+                                style={"display": "none", "marginTop": "20px"}
                             ),
                             html.Div(
                                 [
                                     dcc.Checklist(
                                         value=EMPTY_LIST,
                                         options=EMPTY_LIST,
-                                        id="table_columns_checklist"
+                                        id="table_columns_checklist",
+                                        labelStyle={"display": "block"},
+                                        inputStyle={"marginRight": "15px"}
                                     ),
                                 ],
                                 id="table_columns_checklist_div",
-                                style={"display": "none"}
+                                style={
+                                    "display": "none",
+                                    "marginTop": "20px",
+                                    "marginBottom": "20px",
+                                    "padding": "25px",
+                                    "paddingTop": "23px",
+                                    "width": "100%",
+                                    "height": "30vh",
+                                    "backgroundColor": "#fff",
+                                    "border": "3px black solid",
+                                    "borderRadius": "20px",
+                                    "overflow": "scroll"
+                                }
                             ),
                             html.Div(
                                 [
-                                    html.H5("Values (v1,v2),(v3,v4)...)"),
+                                    html.H5("Values ([v1,v2],[v3,v4]...)"),
                                     dcc.Input(
                                         id="values_multicolumn_exp_param_input",
                                         style=INPUT_STYLE
                                     )
                                 ],
                                 id="values_multicolumn_exp_param_div",
-                                style={"display": "none"}
+                                style={"display": "none", "marginTop": "20px"}
                             )
                         ]
                     ),
