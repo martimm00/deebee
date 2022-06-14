@@ -143,7 +143,7 @@ def write_multicolumn_expectation_in_config(
     :param expectation_set_name: String with the name of the expectation set.
     :param column_names: String with the name of the selected table column, where the
     expectation will have to be applied to.
-    :param expectation_id: String with the name of the new expectation to be added.
+    :param expectation_id: String with the ID of the new expectation to be added.
     :param parameters_dict: Dictionary with parameters of this new expectation.
     """
     expectation_set_path = get_expectation_set_path(expectation_set_name)
@@ -155,19 +155,30 @@ def write_multicolumn_expectation_in_config(
     # Getting current expectation set configuration
     config_dict = get_expectation_set_config(expectation_set_name)
 
+    # Getting new column names key in expectation set config
     column_names = MULTICOLUMN_CONFIG_SEPARATOR.join(column_names)
 
+    # If the new expectations already exist in the config but with another order, then
+    # keep the existing order rather than the new one
+    if MULTICOLUMN_EXPECTATIONS_N_COLUMNS[expectation_id] != 2:
+        new_columns = set(column_names.split(MULTICOLUMN_CONFIG_SEPARATOR))
+        for existing_columns in config_dict[EXPECTATIONS]:
+            if new_columns == set(existing_columns.split(MULTICOLUMN_CONFIG_SEPARATOR)):
+                column_names = existing_columns
+
     if column_names not in config_dict[EXPECTATIONS]:
+        print("column set already exists in config")
         config_dict[EXPECTATIONS][column_names] = list()
 
     expectation_content = get_expectation_config(expectation_id, parameters_dict)
-    config_dict[EXPECTATIONS][column_names].append(expectation_content)
+    if expectation_content not in config_dict[EXPECTATIONS][column_names]:
+        config_dict[EXPECTATIONS][column_names].append(expectation_content)
 
     with open(expectation_set_path, "w") as fp:
         json.dump(config_dict, fp)
 
 
-def delete_expectation_in_config(
+def delete_expectations_in_config(
     expectation_set_name: str, column_names: list, expectation_ids: list
 ) -> None:
     """
@@ -184,14 +195,15 @@ def delete_expectation_in_config(
 
     # Deleting all expectations from configuration
     for column_name, expectation_id in zip(column_names, expectation_ids):
-        for expectation_content in config_dict[EXPECTATIONS][column_name]:
+        built_column_name = MULTICOLUMN_CONFIG_SEPARATOR.join(column_name)
+        for idx in range(len(config_dict[EXPECTATIONS][built_column_name])-1, -1, -1):
+            expectation_content = config_dict[EXPECTATIONS][built_column_name][idx]
             if expectation_content[EXPECTATION_NAME] == expectation_id:
-                config_dict[EXPECTATIONS][column_name].remove(expectation_content)
-                break
+                config_dict[EXPECTATIONS][built_column_name].pop(idx)
 
         # If that column has no expectations, delete it from configuration
-        if not config_dict[EXPECTATIONS][column_name]:
-            del config_dict[EXPECTATIONS][column_name]
+        if not config_dict[EXPECTATIONS][built_column_name]:
+            del config_dict[EXPECTATIONS][built_column_name]
 
     with open(expectation_set_config_path, "w") as fp:
         json.dump(config_dict, fp)

@@ -4,11 +4,21 @@ from great_expectations.checkpoint import LegacyCheckpoint
 from objects.expectation_suite_name import ExpectationSuiteName
 
 from constants.path_constants import GE_VALIDATIONS_PATH, VALIDATION_RESULTS_PATH
-from constants.great_expectations_constants import BATCH_KWARGS, EXPECTATION_SUITE_NAMES
+from constants.great_expectations_constants import (
+    MOSTLY,
+    COLUMN,
+    COLUMN_A,
+    COLUMN_B,
+    COLUMN_LIST,
+    BATCH_KWARGS,
+    EXPECTATION_SUITE_NAMES,
+    MULTICOLUMN_EXPECTATIONS_N_COLUMNS
+)
 from constants.expectation_set_constants import (
     PARAMETERS,
     EXPECTATIONS,
-    EXPECTATION_NAME
+    EXPECTATION_NAME,
+    MULTICOLUMN_CONFIG_SEPARATOR
 )
 
 from src.dataset_operations import read_dataset
@@ -25,27 +35,6 @@ from src.low_level_operations import (
     get_imported_dataset_path,
     get_elements_inside_directory
 )
-
-
-def apply_expectation_to_dataset(
-    batch, column_name: str, expectation_config: dict, confidence: int
-) -> None:
-    """
-    Applies individual expectations to the batch.
-
-    :param batch: GE's batch object.
-    :param column_name: String with the name of the column where the expectation has to
-    be applied.
-    :param expectation_config: Dictionary that provides configuration for the expectation
-    itself, that comes in the format of expectation set configuration.
-    :param confidence: Integer with confidence ranging from 0 to 100.
-    """
-    expectation_id = expectation_config.get(EXPECTATION_NAME)
-    parameters = expectation_config.get(PARAMETERS)
-    parameters["column"] = column_name
-    parameters["mostly"] = confidence/100
-
-    getattr(batch, expectation_id)(**parameters)
 
 
 def is_dataset_compatible(
@@ -65,7 +54,10 @@ def is_dataset_compatible(
     separator = infer_csv_separator(dataset_path)
     dataset = read_dataset(dataset_path, sep=separator, n_rows=2)
     dataset_columns = set(dataset.columns)
-    columns_with_expectations = set(expectations_from_set_config.keys())
+    columns_with_expectations = list()
+    for column_name in expectations_from_set_config.keys():
+        columns_with_expectations += column_name.split(MULTICOLUMN_CONFIG_SEPARATOR)
+    columns_with_expectations = set(columns_with_expectations)
 
     return columns_with_expectations.issubset(dataset_columns)
 
@@ -96,6 +88,34 @@ def save_validation(
     ).run()
     validation_result_identifier = results.list_validation_result_identifiers()[0]
     return validation_result_identifier
+
+
+def apply_expectation_to_dataset(
+    batch, column_name: str, expectation_config: dict, confidence: int
+) -> None:
+    """
+    Applies individual expectations to the batch.
+
+    :param batch: GE's batch object.
+    :param column_name: String with the name of the column where the expectation has to
+    be applied.
+    :param expectation_config: Dictionary that provides configuration for the expectation
+    itself, that comes in the format of expectation set configuration.
+    :param confidence: Integer with confidence ranging from 0 to 100.
+    """
+    expectation_id = expectation_config.get(EXPECTATION_NAME)
+
+    parameters = expectation_config.get(PARAMETERS)
+    parameters[MOSTLY] = confidence / 100
+
+    if expectation_id not in MULTICOLUMN_EXPECTATIONS_N_COLUMNS:
+        parameters[COLUMN] = column_name
+    elif MULTICOLUMN_EXPECTATIONS_N_COLUMNS[expectation_id] == 2:
+        parameters[COLUMN_A], parameters[COLUMN_B] = column_name.split(MULTICOLUMN_CONFIG_SEPARATOR)
+    else:
+        parameters[COLUMN_LIST] = column_name.split(MULTICOLUMN_CONFIG_SEPARATOR)
+
+    getattr(batch, expectation_id)(**parameters)
 
 
 def validate_dataset(

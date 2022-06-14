@@ -67,7 +67,10 @@ SUPPORTED_GE_EXP_TYPES = [
 EXPECTATION_CONJUNCTION = "over"
 
 # Expectation parameter constants
+MOSTLY = "mostly"
+
 # Single column expectations
+COLUMN = "column"
 TYPE = "type_"
 VALUE_SET_SINGLE = "value_set"
 LENGTH = "value"

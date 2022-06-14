@@ -49,7 +49,7 @@ from src.utils import (
 from src.expectation_set_operations import (
     is_numeric_expectation,
     is_non_numeric_expectation,
-    delete_expectation_in_config,
+    delete_expectations_in_config,
     get_two_columns_expectations,
     get_any_column_count_expectations,
     write_multicolumn_expectation_in_config,
@@ -468,6 +468,17 @@ def set_callbacks(app) -> dash.Dash:
         # Returning updated styles
         return checklist_div_style, no_sets_div_style, display_delete_button
 
+    def get_expectation_set_name_from_filename(filename: str) -> str:
+        """
+        Returns the expectation set name given its filename, in other words, it removes
+        the JSON extension.
+
+        :param filename: String with the filename.
+
+        :return: Expectation set name, without the extension.
+        """
+        return filename.split(".")[0]
+
     @app.callback(
         [
             Output("expectation_sets_checklist", "options"),
@@ -488,7 +499,15 @@ def set_callbacks(app) -> dash.Dash:
             for set_name in selected_sets:
                 set_path = get_expectation_set_path(set_name)
                 delete_file(set_path)
-        return [n[:-5] for n in get_available_expectation_sets()], EMPTY_LIST
+        return (
+            sorted(
+                [
+                    get_expectation_set_name_from_filename(fn)
+                    for fn in get_available_expectation_sets()
+                ]
+            ),
+            EMPTY_LIST
+        )
 
     def is_expectation_set_name_in_use(set_name: str) -> bool:
         """
@@ -513,6 +532,7 @@ def set_callbacks(app) -> dash.Dash:
             State("expectation_set_name_input", "value"),
             State("imported_datasets_dropdown", "value"),
             State("expectations_checklist", "options"),
+            State("expectation_sets_checklist", "options"),
             State("single_column_expectation_definer_modal", "is_open")
         ],
         prevent_initial_call=True
@@ -524,6 +544,7 @@ def set_callbacks(app) -> dash.Dash:
         set_name: str,
         dataset_name: str,
         current_expectations: list,
+        sets_in_checklist: list,
         modal_state
     ) -> bool:
         """
@@ -536,13 +557,16 @@ def set_callbacks(app) -> dash.Dash:
         :param set_name: Current name typed by the user.
         :param dataset_name: Currently selected dataset or table.
         :param current_expectations: List with current expectations.
+        :param sets_in_checklist: List with current expectation set names in expectation
+        sets checklist.
         :param modal_state: Current modal state.
 
         :return: Bool.
         """
         if is_trigger("new_single_column_expectation_button"):
             if is_expectation_set_name_valid(set_name):
-                if (not is_expectation_set_name_in_use(set_name) or current_expectations) and dataset_name:
+                if (set_name not in sets_in_checklist or current_expectations) \
+                        and dataset_name:
                     modal_state = True
         else:
             modal_state = False
@@ -559,6 +583,7 @@ def set_callbacks(app) -> dash.Dash:
             State("expectation_set_name_input", "value"),
             State("imported_datasets_dropdown", "value"),
             State("expectations_checklist", "options"),
+            State("expectation_sets_checklist", "options"),
             State("multicolumn_expectation_definer_modal", "is_open")
         ],
         prevent_initial_call=True
@@ -570,6 +595,7 @@ def set_callbacks(app) -> dash.Dash:
         set_name: str,
         dataset_name: str,
         current_expectations: list,
+        sets_in_checklist: list,
         modal_state
     ) -> bool:
         """
@@ -582,13 +608,15 @@ def set_callbacks(app) -> dash.Dash:
         :param set_name: Current name typed by the user.
         :param dataset_name: Currently selected dataset or table.
         :param current_expectations: List with current expectations.
+        :param sets_in_checklist: List with current expectation set names in expectation
+        sets checklist.
         :param modal_state: Current modal state.
 
         :return: Bool.
         """
         if is_trigger("new_multicolumn_expectation_button"):
             if is_expectation_set_name_valid(set_name):
-                if (not is_expectation_set_name_in_use(set_name) or current_expectations) and dataset_name:
+                if (set_name not in sets_in_checklist or current_expectations) and dataset_name:
                     modal_state = True
         else:
             modal_state = False
@@ -894,6 +922,45 @@ def set_callbacks(app) -> dash.Dash:
 
         return list(params_div_map.values())
 
+    def multicolumn_value_set_matches_expression(value: str) -> bool:
+        """
+        Returns if the value set of a multicolumn expectation matches the required
+        format.
+
+        :param value: String with value set.
+
+        :return: Bool.
+        """
+        matches_format = True
+
+        opening_clause_count = value.count("[")
+        closing_clause_count = value.count("]")
+        if (opening_clause_count + closing_clause_count) % 2 != 0:
+            matches_format = False
+
+        if opening_clause_count != closing_clause_count:
+            matches_format = False
+
+        if matches_format:
+            value_count = 0
+            comma_count = 1
+            for character in value:
+                if character == "[":
+                    if comma_count != 1:
+                        matches_format = False
+                    value_count = comma_count = 0
+                elif character == "]":
+                    if value_count < 2 or comma_count != 1:
+                        matches_format = False
+                    comma_count = 0
+                elif character == ",":
+                    comma_count += 1
+                else:
+                    value_count += 1
+
+
+        return matches_format
+
     def parse_parameter(param_name: str, value) -> any or None:
         """
         Returns a parsed parameter in case it is correct. If not, it returns None.
@@ -909,7 +976,7 @@ def set_callbacks(app) -> dash.Dash:
             if value.isnumeric():
                 parsed_param = value
         elif param_name == VALUE_SET_SINGLE:
-            value = value.strip(" ")
+            value = value.replace(" ", "")
             parsed_param = value.split(",")
             for i in range(len(parsed_param)):
                 if parsed_param[i].isnumeric():
@@ -926,26 +993,27 @@ def set_callbacks(app) -> dash.Dash:
             except ValueError:
                 pass
         elif param_name == VALUE_SET_MULTI:
-            value = value.strip(" ")
-            value = value.split("],")
-            value = [
-                pair.strip("[").strip("]") for pair in value
-            ]
-            value = [pair.split(",") for pair in value]
-            if not is_list_empty(value):
-                if all([len(pair) == 2 for pair in value]):
-                    parsed_param = value
-                    for i in range(len(value)):
-                        for j in range(2):
-                            parsed_param[i][j] = parsed_param[i][j].strip("'")
-                            if parsed_param[i][j].isnumeric():
-                                parsed_param[i][j] = int(parsed_param[i][j])
-                            else:
-                                try:
-                                    parsed_param[i][j] = float(parsed_param[i][j])
-                                except ValueError:
-                                    pass
-                    parsed_param = [tuple(pair) for pair in parsed_param]
+            value = value.replace(" ", "").strip(",")
+            if multicolumn_value_set_matches_expression(value):
+                value = value.split("],")
+                value = [
+                    pair.replace("[", "").replace("]", "") for pair in value
+                ]
+                value = [pair.split(",") for pair in value]
+                if not is_list_empty(value):
+                    if all([len(pair) == 2 for pair in value]):
+                        parsed_param = value
+                        for i in range(len(value)):
+                            for j in range(2):
+                                parsed_param[i][j] = parsed_param[i][j].replace("'", "")
+                                if parsed_param[i][j].isnumeric():
+                                    parsed_param[i][j] = int(parsed_param[i][j])
+                                else:
+                                    try:
+                                        parsed_param[i][j] = float(parsed_param[i][j])
+                                    except ValueError:
+                                        pass
+                        parsed_param = [tuple(pair) for pair in parsed_param]
         elif param_name == OR_EQUAL:
             parsed_param = False if is_list_empty(value) else True
         return parsed_param
@@ -969,6 +1037,66 @@ def set_callbacks(app) -> dash.Dash:
             interface_name += ", " + column_names[i]
 
         return interface_name
+
+    def get_expectation_id_and_column_name_from_interface_name(interface_name: str) -> (str, list):
+        """
+        Returns GE's expectation ID given an expectation interface name.
+
+        :param interface_name: String with expectation interface name.
+
+        :return: String with GE's expectation ID.
+        """
+        expectation_name, column_name = interface_name.split(" " + EXPECTATION_CONJUNCTION + " ")
+        if ", " not in column_name:
+            expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[expectation_name]
+        else:
+            expectation_id = MULTICOLUMN_EXPECTATIONS_MAP[expectation_name]
+        return expectation_id, column_name.split(", ")
+
+    @app.callback(
+        Output("expectations_checklist", "value"),
+        [
+            Input("open_expectation_set_definer_button", "n_clicks"),
+            Input("delete_expectation_button", "n_clicks")
+        ]
+    )
+    def reset_selected_expectations(open_definer: int, delete_expectation: int) -> list:
+        """
+        Resets the selection of expectations in expectations checklist.
+
+        :param open_definer: Number of clicks.
+        :param delete_expectation: Number of clicks.
+
+        :return: Empty list to clear checklist selection.
+        """
+        return EMPTY_LIST
+
+    def expectation_is_already_in_checklist(
+        new_interface_name: str, current_expectations: list
+    ) -> bool:
+        """
+        Returns if an expectation interface name, for a multicolumn expectation, does
+        already exist.
+
+        :param new_interface_name: String with the interface name of the new expectation.
+        :param current_expectations: List with existing expectation interface names.
+
+        :return Bool.
+        """
+        exists = False
+        (
+            new_expectation_id,
+            new_column_name
+        ) = get_expectation_id_and_column_name_from_interface_name(new_interface_name)
+        for interface_name in current_expectations:
+            (
+                expectation_id,
+                column_name
+            ) = get_expectation_id_and_column_name_from_interface_name(interface_name)
+            if new_expectation_id == expectation_id:
+                if set(new_column_name) == set(column_name):
+                    exists = True
+        return exists
 
     @app.callback(
         Output("expectations_checklist", "options"),
@@ -1053,7 +1181,10 @@ def set_callbacks(app) -> dash.Dash:
                 expectation_interface_name = build_expectation_interface_name(
                     selected_single_column_expectation_name, [selected_table_column]
                 )
-                current_expectations.append(expectation_interface_name)
+                if not expectation_is_already_in_checklist(
+                        expectation_interface_name, current_expectations
+                ):
+                    current_expectations.append(expectation_interface_name)
 
         elif is_trigger("add_multicolumn_expectation_button"):
             params_map = {
@@ -1076,21 +1207,17 @@ def set_callbacks(app) -> dash.Dash:
                     parsed_param = parse_parameter(param, params_map[param])
                     params_of_interest[param] = parsed_param
                     if parsed_param is None:
-                        print("param", param, "is", parsed_param)
                         all_params_are_set = False
 
             if COLUMN_A in expectation_params and COLUMN_B in expectation_params:
                 if not params_map[COLUMN_A] or not params_map[COLUMN_B]:
-                    print("there is no column A and B param")
                     all_params_are_set = False
 
             if COLUMN_LIST in expectation_params:
                 if is_list_empty(params_map[COLUMN_LIST]):
-                    print("there is no column list param")
                     all_params_are_set = False
 
             if all_params_are_set:
-                print("all params are set")
                 if not is_list_empty(selected_table_columns):
                     table_columns = selected_table_columns
                 else:
@@ -1101,24 +1228,31 @@ def set_callbacks(app) -> dash.Dash:
                 expectation_interface_name = build_expectation_interface_name(
                     selected_multicolumn_expectation_name, list(table_columns)
                 )
-                current_expectations.append(expectation_interface_name)
+                if not expectation_is_already_in_checklist(
+                        expectation_interface_name, current_expectations
+                ):
+                    current_expectations.append(expectation_interface_name)
 
         elif is_trigger("delete_expectation_button"):
             column_names = list()
             expectation_ids = list()
             for interface_name in selected_expectations:
-
-                # Getting column names where expectations are set at
-                column_names.append(interface_name.split(" ")[-1])
+                (
+                    expectation_id,
+                    column_name
+                ) = get_expectation_id_and_column_name_from_interface_name(interface_name)
 
                 # Getting the expectations to be removed
-                expectation_ids.append(SINGLE_COLUMN_EXPECTATIONS_MAP[" ".join(interface_name.split(" ")[:-2])])
+                expectation_ids.append(expectation_id)
+
+                # Getting column names where expectations are set at
+                column_names.append(column_name)
 
                 # Removing the expectations from the interface
                 current_expectations.remove(interface_name)
 
             # Finally, deleting selected expectations in configuration
-            delete_expectation_in_config(expectation_set_name, column_names, expectation_ids)
+            delete_expectations_in_config(expectation_set_name, column_names, expectation_ids)
 
         return current_expectations
 
