@@ -1,19 +1,6 @@
 from datetime import datetime
 
 from constants.defaults import EMPTY_DICT
-from constants.great_expectations_constants import (
-    TYPE,
-    LENGTH,
-    OR_EQUAL,
-    MIN_VALUE,
-    MAX_VALUE,
-    VALUE_SET_MULTI,
-    VALUE_SET_SINGLE,
-    SUPPORTED_GE_EXP_TYPES,
-    NUMERIC_ONLY_EXPECTATIONS,
-    NON_NUMERIC_ONLY_EXPECTATIONS,
-    MULTICOLUMN_EXPECTATIONS_N_COLUMNS
-)
 from constants.expectation_set_constants import (
     PARAMETERS,
     LAST_EDITED,
@@ -22,9 +9,33 @@ from constants.expectation_set_constants import (
     EXPECTATION_SET_NAME,
     MULTICOLUMN_CONFIG_SEPARATOR
 )
+from constants.great_expectations_constants import (
+    TYPE,
+    LENGTH,
+    COLUMN_A,
+    COLUMN_B,
+    OR_EQUAL,
+    MIN_VALUE,
+    MAX_VALUE,
+    COLUMN_LIST,
+    VALUE_SET_MULTI,
+    VALUE_SET_SINGLE,
+    EXPECTATION_PARAMS,
+    SUPPORTED_GE_EXP_TYPES,
+    NUMERIC_ONLY_EXPECTATIONS,
+    MULTICOLUMN_EXPECTATIONS_MAP,
+    NON_NUMERIC_ONLY_EXPECTATIONS,
+    MULTICOLUMN_EXPECTATIONS_N_COLUMNS,
+    SINGLE_COLUMN_EXPECTATIONS_MAP,
+)
 
 from src.utils import is_list_empty
 from src.json_operations import read_json, write_json
+from src.front_end_operations import (
+    build_expectation_interface_name,
+    expectation_is_already_in_checklist,
+    get_expectation_id_and_column_name_from_interface_name
+)
 from src.low_level_operations import (
     exists_path,
     delete_file,
@@ -396,3 +407,172 @@ def parse_parameter(param_name: str, value) -> any or None:
     elif param_name == OR_EQUAL:
         parsed_param = False if is_list_empty(value) else True
     return parsed_param
+
+
+def add_single_column_expectation(
+    current_expectations: list,
+    expectation_set_name: str,
+    selected_table_column: str,
+    expectation_name: str,
+    length_input: str,
+    min_value_input: str,
+    max_value_input: str,
+    type_input: str,
+    values_input: str
+) -> None:
+    """
+    Adds an expectation working for a single table column, to expectation set config.
+
+    :param current_expectations: List with all current expectations in definer
+    checklist.
+    :param expectation_set_name: String with the name of the expectation set that is
+    being created.
+    :param selected_table_column: String with the name of the table column (one
+    only).
+    :param expectation_name: String with the interface name of the expectation that
+    the user wants to apply to that column.
+    :param length_input: String containing most likely a numeric value.
+    :param min_value_input: String containing most likely a numeric value.
+    :param max_value_input: String containing most likely a numeric value.
+    :param type_input: String with the parameter for type expectation.
+    :param values_input: String with the parameter for the values in set
+    expectation.
+    """
+    params_map = {
+        TYPE: type_input,
+        LENGTH: length_input,
+        VALUE_SET_SINGLE: values_input,
+        MIN_VALUE: min_value_input,
+        MAX_VALUE: max_value_input
+    }
+    all_params_are_set = True
+    expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[expectation_name]
+    expectation_params = EXPECTATION_PARAMS[expectation_id]
+    params_of_interest = dict()
+    for param in expectation_params:
+        parsed_param = parse_parameter(param, params_map[param])
+        params_of_interest[param] = parsed_param
+        if parsed_param is None:
+            all_params_are_set = False
+
+        # Expectation will not be added if min value is greater than max
+        # value
+        if MIN_VALUE in params_of_interest and MAX_VALUE in params_of_interest:
+            if params_of_interest[MIN_VALUE] > params_of_interest[MAX_VALUE]:
+                all_params_are_set = False
+    if all_params_are_set:
+        write_single_column_expectation_in_config(
+            expectation_set_name, selected_table_column, expectation_id, params_of_interest
+        )
+        expectation_interface_name = build_expectation_interface_name(
+            expectation_name, [selected_table_column]
+        )
+        if not expectation_is_already_in_checklist(
+                expectation_interface_name, current_expectations
+        ):
+            current_expectations.append(expectation_interface_name)
+
+
+def add_multicolumn_expectation(
+    current_expectations: list,
+    expectation_set_name: str,
+    table_column_a: str,
+    table_column_b: str,
+    selected_table_columns: list,
+    expectation_name: str,
+    or_equal: list,
+    values_input: str
+) -> None:
+    """
+    Adds an expectation working for a multiple table columns, to expectation set
+    config.
+
+    :param current_expectations: List with all current expectations in definer
+    checklist.
+    :param expectation_set_name: String with the name of the expectation set that is
+    being created.
+    :param table_column_a: String with the name of the first column to be used in
+    expectations which require two of them.
+    :param table_column_b: String with the name of the second column to be used in
+    expectations which require two of them.
+    :param selected_table_columns: List with the names of selected columns to be used
+    in expectations which do not require a certain amount of table columns.
+    :param expectation_name: String with the interface name of the expectation that
+    the user wants to apply to that column.
+    :param or_equal: List that can be empty or have one single value.
+    :param values_input: String with the parameter for the values in set
+    expectation.
+    """
+    params_map = {
+        COLUMN_A: table_column_a,
+        COLUMN_B: table_column_b,
+        OR_EQUAL: or_equal,
+        COLUMN_LIST: selected_table_columns,
+        VALUE_SET_MULTI: values_input,
+    }
+    all_params_are_set = True
+    expectation_id = MULTICOLUMN_EXPECTATIONS_MAP[expectation_name]
+    expectation_params = EXPECTATION_PARAMS[expectation_id]
+    params_of_interest = dict()
+    for param in expectation_params:
+        if "column" not in param:
+            parsed_param = parse_parameter(param, params_map[param])
+            params_of_interest[param] = parsed_param
+            if parsed_param is None:
+                all_params_are_set = False
+    if COLUMN_A in expectation_params and COLUMN_B in expectation_params:
+        if not params_map[COLUMN_A] or not params_map[COLUMN_B]:
+            all_params_are_set = False
+    if COLUMN_LIST in expectation_params:
+        if is_list_empty(params_map[COLUMN_LIST]):
+            all_params_are_set = False
+    if all_params_are_set:
+        if not is_list_empty(selected_table_columns):
+            table_columns = selected_table_columns
+        else:
+            table_columns = [table_column_a, table_column_b]
+        write_multicolumn_expectation_in_config(
+            expectation_set_name, table_columns, expectation_id, params_of_interest
+        )
+        expectation_interface_name = build_expectation_interface_name(
+            expectation_name, list(table_columns)
+        )
+        if not expectation_is_already_in_checklist(
+                expectation_interface_name, current_expectations
+        ):
+            current_expectations.append(expectation_interface_name)
+
+
+def delete_expectation(
+    current_expectations: list,
+    expectation_set_name: str,
+    selected_expectations: str
+) -> None:
+    """
+    Deletes selected expectations from expectation config.
+
+    :param current_expectations: List with current expectations in the definer
+    checklist.
+    :param expectation_set_name: String with the name of the expectation set that is
+    being created.
+    :param selected_expectations: List with selected expectations that the user wants
+    to delete.
+    """
+    column_names = list()
+    expectation_ids = list()
+    for interface_name in selected_expectations:
+        (
+            expectation_id,
+            column_name
+        ) = get_expectation_id_and_column_name_from_interface_name(interface_name)
+
+        # Getting the expectations to be removed
+        expectation_ids.append(expectation_id)
+
+        # Getting column names where expectations are set at
+        column_names.append(column_name)
+
+        # Removing the expectations from the interface
+        current_expectations.remove(interface_name)
+    # Finally, deleting selected expectations in configuration
+    delete_expectations_in_config(expectation_set_name, column_names, expectation_ids)

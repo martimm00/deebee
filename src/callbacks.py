@@ -47,20 +47,16 @@ from src.front_end_operations import (
     hide_component,
     display_component,
     open_file_in_browser,
-    refresh_imported_dataset_listing,
-    build_expectation_interface_name,
-    expectation_is_already_in_checklist,
-    get_expectation_id_and_column_name_from_interface_name
+    refresh_imported_dataset_listing
 )
 from src.expectation_set_operations import (
-    parse_parameter,
+    delete_expectation,
     is_numeric_expectation,
     is_non_numeric_expectation,
+    add_multicolumn_expectation,
+    add_single_column_expectation,
     is_expectation_set_name_valid,
-    delete_expectations_in_config,
     get_expectation_set_name_from_filename,
-    write_multicolumn_expectation_in_config,
-    write_single_column_expectation_in_config,
     check_existing_expectation_sets_integrity,
 )
 from src.low_level_operations import (
@@ -285,8 +281,6 @@ def set_callbacks(app) -> dash.Dash:
                 file_path = get_profile_report_path(dataset_name)
                 open_file_in_browser(file_path)
 
-        return
-
     @app.callback(
         Output("clear_insights_div", "style"),
         [
@@ -321,6 +315,7 @@ def set_callbacks(app) -> dash.Dash:
             # If there are, then display them
             else:
                 style = display_component(current_style)
+
         return style
 
     @app.callback(
@@ -424,10 +419,12 @@ def set_callbacks(app) -> dash.Dash:
     ) -> (list, list):
         if is_trigger("confirm_expectation_set_definition_button"):
             check_existing_expectation_sets_integrity()
+
         elif is_trigger("delete_expectation_set_button"):
             for set_name in selected_sets:
                 set_path = get_expectation_set_path(set_name)
                 delete_file(set_path)
+
         return (
             sorted(
                 [
@@ -533,8 +530,9 @@ def set_callbacks(app) -> dash.Dash:
         """
         if is_trigger("new_multicolumn_expectation_button"):
             if is_expectation_set_name_valid(set_name):
-                if (set_name not in sets_in_checklist or current_expectations) and dataset_name:
-                    modal_state = True
+                if set_name not in sets_in_checklist or bool(current_expectations):
+                    if dataset_name:
+                        modal_state = True
         else:
             modal_state = False
         return modal_state
@@ -840,152 +838,112 @@ def set_callbacks(app) -> dash.Dash:
             Input("delete_expectation_button", "n_clicks")
         ],
         [
-            State("compatible_single_column_expectations_dropdown", "value"),
-            State("compatible_multicolumn_expectations_dropdown", "value"),
+            State("expectations_checklist", "options"),
             State("expectation_set_name_input", "value"),
             State("table_columns_dropdown", "value"),
-            State("expectations_checklist", "options"),
-            State("expectations_checklist", "value"),
+            State("table_column_a", "value"),
+            State("table_column_b", "value"),
+            State("table_columns_checklist", "value"),
+            State("compatible_single_column_expectations_dropdown", "value"),
+            State("compatible_multicolumn_expectations_dropdown", "value"),
             State("type_exp_param_input", "value"),
             State("length_exp_param_input", "value"),
             State("values_single_column_exp_param_input", "value"),
+            State("values_multicolumn_exp_param_input", "value"),
             State("min_value_exp_param_input", "value"),
             State("max_value_exp_param_input", "value"),
-            State("table_column_a", "value"),
-            State("table_column_b", "value"),
             State("or_equal_checklist", "value"),
-            State("table_columns_checklist", "value"),
-            State("values_multicolumn_exp_param_input", "value")
+            State("expectations_checklist", "value")
         ]
     )
-    def add_new_expectation(
+    def add_or_delete_expectation_from_set(
         open_set_definer: int,
-        add_single_column_expectation: int,
-        add_multicolumn_expectation: int,
-        delete_expectation: int,
-        selected_single_column_expectation_name: str,
-        selected_multicolumn_expectation_name: str,
+        add_single_column: int,
+        add_multicolumn: int,
+        delete: int,
+        current_expectations: list,
         expectation_set_name: str,
         selected_table_column: str,
-        current_expectations: list,
-        selected_expectations: list,
+        table_column_a: str,
+        table_column_b: str,
+        selected_table_columns: list,
+        selected_single_column_expectation_name: str,
+        selected_multicolumn_expectation_name: str,
         type_input: str,
         length_input: str,
         values_single_input: str,
+        values_multi_input: str,
         min_value_input: str,
         max_value_input: str,
-        table_column_a: str,
-        table_column_b: str,
         or_equal: list,
-        selected_table_columns: list,
-        values_multi_input: str
+        selected_expectations: list,
     ) -> (list, dict):
+        """
+        This callback adds or deletes expectations from an expectation set, using its
+        config.
+
+        :param open_set_definer: Number of clicks.
+        :param add_single_column: Number of clicks.
+        :param add_multicolumn: Number of clicks.
+        :param delete: Number of clicks.
+        :param selected_single_column_expectation_name: String with the interface name of
+        the expectation that needs one single column.
+        :param selected_multicolumn_expectation_name: String with the interface name of
+        the expectation that needs more than one column.
+        :param expectation_set_name: String with the name of the expectation set that is
+        being created.
+        :param selected_table_column: String with the name of the column that has to be
+        used in single column expectations.
+        :param current_expectations: List with expectations at definer checklist.
+        :param selected_expectations: List with selected expectations at definer
+        checklist.
+        :param type_input: String with selected type.
+        :param length_input: String with most likely a numeric value.
+        :param values_single_input: String with parameters for single column value set
+        expectation.
+        :param values_multi_input: String with parameters for multicolumn value set
+        expectation.
+        :param min_value_input: String with most likely a numeric value.
+        :param max_value_input: String with most likely a numeric value.
+        :param table_column_a: String with the name of the first table column for those
+        expectations that need two columns.
+        :param table_column_b: String with the name of the second table column for those
+        expectations that need two columns.
+        :param or_equal: List that can be empty or have one single value.
+        :param selected_table_columns: List with column names for those expectations that
+        do not need a certain number of columns.
+        """
         if is_trigger("open_expectation_set_definer_button"):
             current_expectations = list()
         elif is_trigger("add_single_column_expectation_button"):
-            params_map = {
-                TYPE: type_input,
-                LENGTH: length_input,
-                VALUE_SET_SINGLE: values_single_input,
-                MIN_VALUE: min_value_input,
-                MAX_VALUE: max_value_input
-            }
-            all_params_are_set = True
-
-            expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[selected_single_column_expectation_name]
-            expectation_params = EXPECTATION_PARAMS[expectation_id]
-
-            params_of_interest = dict()
-            for param in expectation_params:
-                parsed_param = parse_parameter(param, params_map[param])
-                params_of_interest[param] = parsed_param
-                if parsed_param is None:
-                    all_params_are_set = False
-
-                # Expectation will not be added if min value is greater than max
-                # value
-                if MIN_VALUE in params_of_interest and MAX_VALUE in params_of_interest:
-                    if params_of_interest[MIN_VALUE] > params_of_interest[MAX_VALUE]:
-                        all_params_are_set = False
-            if all_params_are_set:
-                write_single_column_expectation_in_config(
-                    expectation_set_name, selected_table_column, expectation_id, params_of_interest
-                )
-                expectation_interface_name = build_expectation_interface_name(
-                    selected_single_column_expectation_name, [selected_table_column]
-                )
-                if not expectation_is_already_in_checklist(
-                        expectation_interface_name, current_expectations
-                ):
-                    current_expectations.append(expectation_interface_name)
+            add_single_column_expectation(
+                current_expectations,
+                expectation_set_name,
+                selected_table_column,
+                selected_single_column_expectation_name,
+                length_input,
+                min_value_input,
+                max_value_input,
+                type_input,
+                values_single_input
+            )
 
         elif is_trigger("add_multicolumn_expectation_button"):
-            params_map = {
-                COLUMN_A: table_column_a,
-                COLUMN_B: table_column_b,
-                OR_EQUAL: or_equal,
-                COLUMN_LIST: selected_table_columns,
-                VALUE_SET_MULTI: values_multi_input,
-            }
-            all_params_are_set = True
-
-            expectation_id = MULTICOLUMN_EXPECTATIONS_MAP[
-                selected_multicolumn_expectation_name
-            ]
-            expectation_params = EXPECTATION_PARAMS[expectation_id]
-
-            params_of_interest = dict()
-            for param in expectation_params:
-                if "column" not in param:
-                    parsed_param = parse_parameter(param, params_map[param])
-                    params_of_interest[param] = parsed_param
-                    if parsed_param is None:
-                        all_params_are_set = False
-
-            if COLUMN_A in expectation_params and COLUMN_B in expectation_params:
-                if not params_map[COLUMN_A] or not params_map[COLUMN_B]:
-                    all_params_are_set = False
-
-            if COLUMN_LIST in expectation_params:
-                if is_list_empty(params_map[COLUMN_LIST]):
-                    all_params_are_set = False
-
-            if all_params_are_set:
-                if not is_list_empty(selected_table_columns):
-                    table_columns = selected_table_columns
-                else:
-                    table_columns = [table_column_a, table_column_b]
-                write_multicolumn_expectation_in_config(
-                    expectation_set_name, table_columns, expectation_id, params_of_interest
-                )
-                expectation_interface_name = build_expectation_interface_name(
-                    selected_multicolumn_expectation_name, list(table_columns)
-                )
-                if not expectation_is_already_in_checklist(
-                        expectation_interface_name, current_expectations
-                ):
-                    current_expectations.append(expectation_interface_name)
+            add_multicolumn_expectation(
+                current_expectations,
+                expectation_set_name,
+                table_column_a,
+                table_column_b,
+                selected_table_columns,
+                selected_multicolumn_expectation_name,
+                or_equal,
+                values_multi_input
+            )
 
         elif is_trigger("delete_expectation_button"):
-            column_names = list()
-            expectation_ids = list()
-            for interface_name in selected_expectations:
-                (
-                    expectation_id,
-                    column_name
-                ) = get_expectation_id_and_column_name_from_interface_name(interface_name)
-
-                # Getting the expectations to be removed
-                expectation_ids.append(expectation_id)
-
-                # Getting column names where expectations are set at
-                column_names.append(column_name)
-
-                # Removing the expectations from the interface
-                current_expectations.remove(interface_name)
-
-            # Finally, deleting selected expectations in configuration
-            delete_expectations_in_config(expectation_set_name, column_names, expectation_ids)
+            delete_expectation(
+                current_expectations, expectation_set_name, selected_expectations
+            )
 
         return current_expectations
 
