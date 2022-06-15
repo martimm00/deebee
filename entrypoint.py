@@ -2,6 +2,8 @@ import os
 import logging
 import warnings
 
+from constants.user_message_constants import WELCOME_MESSAGE
+
 from src.app import create_app
 from src.great_expectations_init import initialize
 from src.front_end_operations import open_in_browser
@@ -87,7 +89,7 @@ def display_welcome_message() -> None:
     """
     Shows welcome message when launching the app.
     """
-    system_call("echo Welcome message")
+    system_call(f"echo {WELCOME_MESSAGE}")
 
 
 def launch_web_browser() -> None:
