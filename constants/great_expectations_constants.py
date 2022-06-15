@@ -17,7 +17,6 @@ NUMERIC_ONLY_EXPECTATIONS = [
 NON_NUMERIC_ONLY_EXPECTATIONS = [
     "Value lengths to equal",
 ]
-EXPECTATION_INTERFACE_SEPARATOR_STRING = "over"
 EXPECTATION_PARAMS = {
 
     # Single column expectations
@@ -57,7 +56,6 @@ MULTICOLUMN_EXPECTATIONS_N_COLUMNS = {
     "expect_column_pair_values_to_be_in_set": 2,
     "expect_multicolumn_values_to_be_unique": None
 }
-MULTICOLUMN_EXP_NEEDS_GE_NAME = "expect_column_pair_values_A_to_be_greater_than_B"
 SUPPORTED_GE_EXP_TYPES = [
     "int",
     "bool",

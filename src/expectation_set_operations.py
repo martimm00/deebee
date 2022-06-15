@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 
 from constants.defaults import EMPTY_DICT
@@ -16,6 +15,7 @@ from constants.expectation_set_constants import (
     MULTICOLUMN_CONFIG_SEPARATOR
 )
 
+from src.json_operations import read_json, write_json
 from src.low_level_operations import (
     exists_path,
     delete_file,
@@ -35,7 +35,7 @@ def get_expectation_set_config(expectation_set_name: str) -> dict:
     """
     expectation_set_path = get_expectation_set_path(expectation_set_name)
     with open(expectation_set_path, "r") as fp:
-        config = json.load(fp)
+        config = read_json(fp)
     return config
 
 
@@ -115,7 +115,7 @@ def write_single_column_expectation_in_config(
     if not exists_path(expectation_set_path):
         empty_expectation_set_content = get_empty_expectation_set_content(expectation_set_name)
         with open(expectation_set_path, "w") as fp:
-            json.dump(empty_expectation_set_content, fp)
+            write_json(empty_expectation_set_content, fp)
 
     # Getting current expectation set configuration
     config_dict = get_expectation_set_config(expectation_set_name)
@@ -127,7 +127,7 @@ def write_single_column_expectation_in_config(
     config_dict[EXPECTATIONS][column_name].append(expectation_content)
 
     with open(expectation_set_path, "w") as fp:
-        json.dump(config_dict, fp)
+        write_json(config_dict, fp)
 
 
 def write_multicolumn_expectation_in_config(
@@ -150,7 +150,7 @@ def write_multicolumn_expectation_in_config(
     if not exists_path(expectation_set_path):
         empty_expectation_set_content = get_empty_expectation_set_content(expectation_set_name)
         with open(expectation_set_path, "w") as fp:
-            json.dump(empty_expectation_set_content, fp)
+            write_json(empty_expectation_set_content, fp)
 
     # Getting current expectation set configuration
     config_dict = get_expectation_set_config(expectation_set_name)
@@ -175,7 +175,7 @@ def write_multicolumn_expectation_in_config(
         config_dict[EXPECTATIONS][column_names].append(expectation_content)
 
     with open(expectation_set_path, "w") as fp:
-        json.dump(config_dict, fp)
+        write_json(config_dict, fp)
 
 
 def delete_expectations_in_config(
@@ -191,7 +191,7 @@ def delete_expectations_in_config(
     """
     expectation_set_config_path = get_expectation_set_path(expectation_set_name)
     with open(expectation_set_config_path, "r") as fp:
-        config_dict = json.load(fp)
+        config_dict = read_json(fp)
 
     # Deleting all expectations from configuration
     for column_name, expectation_id in zip(column_names, expectation_ids):
@@ -206,7 +206,7 @@ def delete_expectations_in_config(
             del config_dict[EXPECTATIONS][built_column_name]
 
     with open(expectation_set_config_path, "w") as fp:
-        json.dump(config_dict, fp)
+        write_json(config_dict, fp)
 
 
 def get_numeric_only_expectations() -> list:
@@ -243,6 +243,15 @@ def is_non_numeric_expectation(expectation: str) -> bool:
     :return: Boolean that tells the app if it is non-numeric.
     """
     return expectation not in get_numeric_only_expectations()
+
+
+def is_expectation_set_name_valid(name: str) -> bool:
+    """
+    Returns if the given expectation set name is valid or not.
+
+    :param name: String with the name to be checked.
+    """
+    return name and name.replace("_", "").isalnum()
 
 
 def get_two_columns_expectations() -> list:

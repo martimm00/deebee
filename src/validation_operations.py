@@ -4,26 +4,24 @@ from great_expectations.checkpoint import LegacyCheckpoint
 from objects.expectation_suite_name import ExpectationSuiteName
 
 from constants.path_constants import GE_VALIDATIONS_PATH, VALIDATION_RESULTS_PATH
-from constants.great_expectations_constants import (
-    MOSTLY,
-    COLUMN,
-    COLUMN_A,
-    COLUMN_B,
-    COLUMN_LIST,
-    BATCH_KWARGS,
-    EXPECTATION_SUITE_NAMES,
-    MULTICOLUMN_EXPECTATIONS_N_COLUMNS
-)
 from constants.expectation_set_constants import (
     PARAMETERS,
     EXPECTATIONS,
     EXPECTATION_NAME,
     MULTICOLUMN_CONFIG_SEPARATOR
 )
+from constants.great_expectations_constants import (
+    COLUMN,
+    COLUMN_A,
+    COLUMN_B,
+    COLUMN_LIST,
+    BATCH_KWARGS,
+    EXPECTATION_SUITE_NAMES,
+    MULTICOLUMN_EXPECTATIONS_N_COLUMNS, MOSTLY
+)
 
-from src.dataset_operations import read_dataset
-from src.utils import get_value, infer_csv_separator
 from src.batch_operations import get_ge_batch, get_batch_kwargs
+from src.utils import get_value, read_dataset, infer_csv_separator
 from src.expectation_set_operations import get_expectation_set_config
 from src.expectation_suite_operations import create_empty_ge_expectation_suite
 from src.low_level_operations import (

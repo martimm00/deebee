@@ -7,7 +7,6 @@ from constants.path_constants import (
     UPLOAD_DIRECTORY_PATH,
     IMPORT_DIRECTORY_PATH,
     EXPECTATION_SETS_PATH,
-    EXPECTATION_SUITES_PATH,
     VALIDATION_RESULTS_PATH,
 )
 
@@ -217,15 +216,6 @@ def get_profile_reports_path() -> os.path:
     return PROFILE_REPORTS_PATH
 
 
-def get_expectations_path() -> os.path:
-    """
-    Returns the directory that contains all Expectation Suites.
-
-    :return: Path.
-    """
-    return EXPECTATION_SUITES_PATH
-
-
 def get_expectation_sets_path() -> os.path:
     """
     Returns the directory that contains configuration for all Expectation Suites.
@@ -386,17 +376,6 @@ def delete_file(path: os.path, try_hard=False) -> None:
     shutil.rmtree(path)
 
 
-def write_file(path: os.path, content: str) -> None:
-    """
-    Writes string as a file onto a file system.
-
-    :param path: Path where the files have to be written.
-    :param content: String hat has to be written as a file.
-    """
-    with open(path, "w") as ftw:
-        ftw.write(content)
-
-
 def system_call(instruction: str) -> None:
     """
     Makes a terminal system call with an instruction, which is given as a string.
@@ -440,15 +419,6 @@ def make_dir(path: os.path) -> None:
     :param path: A new path.
     """
     os.makedirs(path)
-
-
-def get_name_from_file_name(file_name: str) -> str:
-    """
-    Returns the name of the file given the whole filename, including the extension.
-
-    :param file_name: String with the whole filename, including the extension.
-    """
-    return ".".join(file_name.split(".")[:-1])
 
 
 def get_file_name_by_path(path: os.path) -> str:

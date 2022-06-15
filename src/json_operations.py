@@ -1,45 +1,24 @@
 import json
 
 
-def to_json(data) -> str:
+def read_json(file_pointer):
     """
-    Transforms JSON serializable data to JSON file.
+    Reads JSON file and loads it to Python type.
 
-    :param data: str, list, dict, bool, ...
+    :param file_pointer: Local file pointer or buffer.
 
-    :return: JSON file.
+    :return: File to Python dictionary type.
     """
-    return json.dumps(data)
+    return json.load(file_pointer)
 
 
-def from_json(data: str):
+def write_json(content: dict, file_pointer):
     """
-    Loads JSON file to python type.
+    Writes JSON file from Python type.
 
-    :param data: JSON file.
+    :param content: Python dictionary to be converted.
+    :param file_pointer: Local file pointer or buffer.
 
-    :return: str, list, dict, bool, ...
+    :return: File to Python dictionary type.
     """
-    return json.loads(data)
-
-
-def read_json(file):
-    """
-    Reads JSON file and loads it to python type.
-
-    :param file: Read file.
-
-    :return: File to python type.
-    """
-    return json.load(file)
-
-
-def has_json_name(filename: str) -> bool:
-    """
-    Returns if certain file name contains JSON extension.
-
-    :param filename: Str with file name.
-
-    :return: Boolean.
-    """
-    return filename[-5:] == ".json"
+    return json.dump(content, file_pointer)

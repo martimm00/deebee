@@ -781,6 +781,8 @@ def create_layout(app: dash.Dash) -> dash.Dash:
             # Auxiliary Divs
             html.Div(id="profile_report_output_div", style={"display": "none"}),
             html.Div(id="open_validation_result_output_div", style={"display": "none"}),
+
+            # Download components
             dcc.Download(id="validation_result_downloader")
         ],
         style={

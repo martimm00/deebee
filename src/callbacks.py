@@ -1,5 +1,3 @@
-import ast
-
 import dash
 from dash import dcc
 import great_expectations as ge
@@ -12,12 +10,12 @@ from constants.path_constants import GREAT_EXPECTATIONS_PATH
 from constants.great_expectations_constants import (
     TYPE,
     LENGTH,
-    COLUMN_LIST,
     OR_EQUAL,
     COLUMN_A,
     COLUMN_B,
     MIN_VALUE,
     MAX_VALUE,
+    COLUMN_LIST,
     VALUE_SET_MULTI,
     VALUE_SET_SINGLE,
     EXPECTATION_PARAMS,
@@ -27,9 +25,7 @@ from constants.great_expectations_constants import (
     SINGLE_COLUMN_EXPECTATIONS_MAP,
 )
 
-from objects.expectation_suite_name import ExpectationSuiteName
-
-from src.expectation_operations import is_expectation_set_name_valid
+from src.expectation_suite_operations import get_expectation_suite_name_object
 from src.validation_operations import validate_dataset, move_validation_to_app_system
 from src.front_end_operations import (
     is_trigger,
@@ -49,8 +45,9 @@ from src.utils import (
 from src.expectation_set_operations import (
     is_numeric_expectation,
     is_non_numeric_expectation,
-    delete_expectations_in_config,
     get_two_columns_expectations,
+    is_expectation_set_name_valid,
+    delete_expectations_in_config,
     get_any_column_count_expectations,
     write_multicolumn_expectation_in_config,
     write_single_column_expectation_in_config,
@@ -1327,9 +1324,14 @@ def set_callbacks(app) -> dash.Dash:
                 if confidence.isnumeric():
                     dataset_name = get_value(selected_datasets)
                     expectation_set_name = get_value(selected_expectation_sets)
-                    expectation_name_object = ExpectationSuiteName(expectation_set_name)
+                    expectation_name_object = get_expectation_suite_name_object(
+                        expectation_set_name
+                    )
                     validate_dataset(
-                        ge_context, dataset_name, expectation_name_object, int(confidence)
+                        ge_context,
+                        dataset_name,
+                        expectation_name_object,
+                        int(confidence)
                     )
 
         elif is_trigger("delete_validations_button"):
