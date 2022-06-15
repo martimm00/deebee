@@ -31,7 +31,7 @@ from src.low_level_operations import (
     is_directory,
     delete_directory,
     get_imported_dataset_path,
-    get_elements_inside_directory
+    get_elements_inside_directory, get_validations_path, is_validation_name
 )
 
 
@@ -213,3 +213,17 @@ def move_validation_to_app_system(dataset_name: str, confidence: str) -> None:
 
             # Deleting old directories
             delete_directory(set_element_path)
+
+
+def get_validation_file_names() -> list:
+    """
+    Returns the names of all available validation files.
+
+    :return: List with the names of all validation files.
+    """
+    validations_path = get_validations_path()
+    return [
+        n
+        for n in get_elements_inside_directory(validations_path)
+        if is_validation_name(n)
+    ]

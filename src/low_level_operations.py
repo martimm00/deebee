@@ -1,7 +1,6 @@
 import os
 import shutil
 
-from constants.supported_constants import SUPPORTED_DATASET_TYPES
 from constants.path_constants import (
     PROFILE_REPORTS_PATH,
     UPLOAD_DIRECTORY_PATH,
@@ -89,17 +88,6 @@ def get_elements_inside_directory(directory: os.path) -> list:
         return list()
 
 
-def is_dataset_name(name: str) -> bool:
-    """
-    Returns whether the name belongs to a potential dataset or not.
-
-    :param name: String to be checked.
-
-    :return: Bool.
-    """
-    return any([ends_with("." + ending, name) for ending in SUPPORTED_DATASET_TYPES])
-
-
 def is_profile_report_name(name: str) -> bool:
     """
     Returns whether the name belongs to a potential profile report or not.
@@ -142,32 +130,6 @@ def is_validation_name(name: str) -> bool:
     :return: Bool.
     """
     return ends_with(".html", name)
-
-
-def get_imported_dataset_names() -> list:
-    """
-    Returns the names of all uploaded datasets from the upload path.
-
-    :return: List with the names of all uploaded datasets.
-    """
-    upload_dir_path = get_import_dir_path()
-    return [
-        d for d in get_elements_inside_directory(upload_dir_path) if is_dataset_name(d)
-    ]
-
-
-def get_validation_file_names() -> list:
-    """
-    Returns the names of all available validation files.
-
-    :return: List with the names of all validation files.
-    """
-    validations_path = get_validations_path()
-    return [
-        n
-        for n in get_elements_inside_directory(validations_path)
-        if is_validation_name(n)
-    ]
 
 
 def is_directory(path: os.path) -> bool:

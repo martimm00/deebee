@@ -19,20 +19,20 @@ from constants.great_expectations_constants import (
     VALUE_SET_MULTI,
     VALUE_SET_SINGLE,
     EXPECTATION_PARAMS,
-    SUPPORTED_GE_EXP_TYPES,
-    EXPECTATION_CONJUNCTION,
     MULTICOLUMN_EXPECTATIONS_MAP,
     SINGLE_COLUMN_EXPECTATIONS_MAP,
 )
 
 from src.expectation_suite_operations import get_expectation_suite_name_object
-from src.validation_operations import validate_dataset, move_validation_to_app_system
-from src.front_end_operations import (
-    is_trigger,
-    hide_component,
-    display_component,
-    open_file_in_browser,
-    get_checklist_components,
+from src.dataset_operations import (
+    delete_datasets,
+    dataset_can_be_imported,
+    is_new_dataset_name_valid
+)
+from src.validation_operations import (
+    validate_dataset,
+    get_validation_file_names,
+    move_validation_to_app_system
 )
 from src.utils import (
     get_value,
@@ -42,16 +42,26 @@ from src.utils import (
     infer_csv_separator,
     build_profile_report
 )
+from src.front_end_operations import (
+    is_trigger,
+    hide_component,
+    display_component,
+    open_file_in_browser,
+    refresh_imported_dataset_listing,
+    build_expectation_interface_name,
+    expectation_is_already_in_checklist,
+    get_expectation_id_and_column_name_from_interface_name
+)
 from src.expectation_set_operations import (
+    parse_parameter,
     is_numeric_expectation,
     is_non_numeric_expectation,
-    get_two_columns_expectations,
     is_expectation_set_name_valid,
     delete_expectations_in_config,
-    get_any_column_count_expectations,
+    get_expectation_set_name_from_filename,
     write_multicolumn_expectation_in_config,
     write_single_column_expectation_in_config,
-    check_existing_expectation_sets_integrity
+    check_existing_expectation_sets_integrity,
 )
 from src.low_level_operations import (
     move,
@@ -59,7 +69,6 @@ from src.low_level_operations import (
     join_paths,
     delete_file,
     has_extension,
-    is_dataset_name,
     get_validation_path,
     get_import_dir_path,
     get_validations_path,
@@ -68,12 +77,10 @@ from src.low_level_operations import (
     get_profile_reports_path,
     get_expectation_set_path,
     get_imported_dataset_path,
-    get_validation_file_names,
     get_uploaded_dataset_path,
-    get_imported_dataset_names,
     is_profile_report_available,
     get_elements_inside_directory,
-    get_available_expectation_sets,
+    get_available_expectation_sets
 )
 
 
@@ -128,70 +135,6 @@ def set_callbacks(app) -> dash.Dash:
 
         # Returning updated styles
         return checklist_div_style, no_imports_div_style
-
-    def delete_datasets(datasets_to_delete: list) -> None:
-        """
-        Deletes the selected datasets and updates available options in the checklist.
-
-        :param datasets_to_delete: List with components to be deleted.
-
-        :return: List with updated available options in the checklist.
-        """
-        for dataset_name in datasets_to_delete:
-
-            # Getting the dataset path and removing it from disk
-            dataset_path = get_imported_dataset_path(dataset_name)
-            delete_file(dataset_path)
-
-        return
-
-    def refresh_imported_dataset_listing() -> (list, list):
-        """
-        Returns a list of dcc.Checklist components, based on imported datasets.
-
-        :return: List of checklist components.
-        """
-        imported_datasets = get_imported_dataset_names()
-        return get_checklist_components(imported_datasets)
-
-    def dataset_name_is_already_in_use(dataset_name: str) -> bool:
-        """
-        Returns if the name of a recently imported dataset is already in use.
-
-        :param dataset_name: String with the name of the dataset.
-
-        :return: Bool.
-        """
-        return dataset_name in get_imported_dataset_names()
-
-    def dataset_can_be_imported(dataset_name: str) -> bool:
-        """
-        Returns if a dataset can be imported or not.
-
-        :param dataset_name: String with the name of the dataset.
-
-        :return: Bool
-        """
-        return not dataset_name_is_already_in_use(dataset_name)
-
-    def is_new_dataset_name_valid(current_names: list, name: str) -> bool or None:
-        """
-        Returns if the new name for a dataset is valid.
-
-        :param current_names: List with current names.
-        :param name: String with the new name.
-
-        :return: Bool.
-        """
-        if len(name.split(".")) == 2:
-            name_without_extension, _ = name.split(".")
-            if name_without_extension:
-                if is_dataset_name(name):
-
-                    # If the name is not already in use for other datasets
-                    return name not in current_names
-
-        return
 
     @app.callback(
         [
@@ -465,17 +408,6 @@ def set_callbacks(app) -> dash.Dash:
         # Returning updated styles
         return checklist_div_style, no_sets_div_style, display_delete_button
 
-    def get_expectation_set_name_from_filename(filename: str) -> str:
-        """
-        Returns the expectation set name given its filename, in other words, it removes
-        the JSON extension.
-
-        :param filename: String with the filename.
-
-        :return: Expectation set name, without the extension.
-        """
-        return filename.split(".")[0]
-
     @app.callback(
         [
             Output("expectation_sets_checklist", "options"),
@@ -505,18 +437,6 @@ def set_callbacks(app) -> dash.Dash:
             ),
             EMPTY_LIST
         )
-
-    def is_expectation_set_name_in_use(set_name: str) -> bool:
-        """
-        Returns if the expectation set name is already in use. In that case, the name
-        will not be available.
-
-        :param set_name: String with the name introduced by the user.
-
-        :return: Bool.
-        """
-        expectation_set_names_in_use = get_available_expectation_sets()
-        return set_name + ".json" in expectation_set_names_in_use
 
     @app.callback(
         Output("single_column_expectation_definer_modal", "is_open"),
@@ -631,32 +551,6 @@ def set_callbacks(app) -> dash.Dash:
             else:
                 div_style = hide_component(div_style)
         return div_style
-
-    def get_two_column_expectation_interface_names() -> list:
-        """
-        Returns a list with interface names of those expectations that work with two
-        table columns.
-
-        :return: List with interface names.
-        """
-        names = list()
-        for interface_name in SINGLE_COLUMN_EXPECTATIONS_MAP:
-            if SINGLE_COLUMN_EXPECTATIONS_MAP[interface_name] in get_two_columns_expectations():
-                names.append(interface_name)
-        return names
-
-    def get_any_column_count_expectation_interface_names() -> list:
-        """
-        Returns a list with interface names of those expectations that work with any
-        table column count.
-
-        :return: List with interface names.
-        """
-        names = list()
-        for interface_name in SINGLE_COLUMN_EXPECTATIONS_MAP:
-            if SINGLE_COLUMN_EXPECTATIONS_MAP[interface_name] in get_any_column_count_expectations():
-                names.append(interface_name)
-        return names
 
     @app.callback(
         [
@@ -919,137 +813,6 @@ def set_callbacks(app) -> dash.Dash:
 
         return list(params_div_map.values())
 
-    def multicolumn_value_set_matches_expression(value: str) -> bool:
-        """
-        Returns if the value set of a multicolumn expectation matches the required
-        format.
-
-        :param value: String with value set.
-
-        :return: Bool.
-        """
-        matches_format = True
-
-        opening_clause_count = value.count("[")
-        closing_clause_count = value.count("]")
-        if (opening_clause_count + closing_clause_count) % 2 != 0:
-            matches_format = False
-
-        if opening_clause_count != closing_clause_count:
-            matches_format = False
-
-        if matches_format:
-            value_count = 0
-            comma_count = 1
-            for character in value:
-                if character == "[":
-                    if comma_count != 1:
-                        matches_format = False
-                    value_count = comma_count = 0
-                elif character == "]":
-                    if value_count < 2 or comma_count != 1:
-                        matches_format = False
-                    comma_count = 0
-                elif character == ",":
-                    comma_count += 1
-                else:
-                    value_count += 1
-
-
-        return matches_format
-
-    def parse_parameter(param_name: str, value) -> any or None:
-        """
-        Returns a parsed parameter in case it is correct. If not, it returns None.
-
-        :param param_name: String with the name of the parameter.
-        :param value: Non-parsed value given to the parameter.
-        """
-        parsed_param = None
-        if param_name == TYPE:
-            if value in SUPPORTED_GE_EXP_TYPES:
-                parsed_param = value
-        elif param_name == LENGTH:
-            if value.isnumeric():
-                parsed_param = value
-        elif param_name == VALUE_SET_SINGLE:
-            value = value.replace(" ", "")
-            parsed_param = value.split(",")
-            for i in range(len(parsed_param)):
-                if parsed_param[i].isnumeric():
-                    parsed_param[i] = int(parsed_param[i])
-                else:
-                    try:
-                        parsed_param[i] = float(parsed_param[i])
-                    except ValueError:
-                        pass
-        elif param_name == MIN_VALUE or param_name == MAX_VALUE:
-            value = value.replace(",", ".")
-            try:
-                parsed_param = float(value)
-            except ValueError:
-                pass
-        elif param_name == VALUE_SET_MULTI:
-            value = value.replace(" ", "").strip(",")
-            if multicolumn_value_set_matches_expression(value):
-                value = value.split("],")
-                value = [
-                    pair.replace("[", "").replace("]", "") for pair in value
-                ]
-                value = [pair.split(",") for pair in value]
-                if not is_list_empty(value):
-                    if all([len(pair) == 2 for pair in value]):
-                        parsed_param = value
-                        for i in range(len(value)):
-                            for j in range(2):
-                                parsed_param[i][j] = parsed_param[i][j].replace("'", "")
-                                if parsed_param[i][j].isnumeric():
-                                    parsed_param[i][j] = int(parsed_param[i][j])
-                                else:
-                                    try:
-                                        parsed_param[i][j] = float(parsed_param[i][j])
-                                    except ValueError:
-                                        pass
-                        parsed_param = [tuple(pair) for pair in parsed_param]
-        elif param_name == OR_EQUAL:
-            parsed_param = False if is_list_empty(value) else True
-        return parsed_param
-
-    def build_expectation_interface_name(
-        expectation_name: str, column_names: list
-    ) -> str:
-        """
-        Builds expectation interface name from expectation name and column name.
-
-        :param expectation_name: String with expectation name.
-        :param column_names: List with column names.
-
-        :return: String with interface name.
-        """
-        spacer = " " if EXPECTATION_CONJUNCTION else ""
-        interface_name = expectation_name + spacer + EXPECTATION_CONJUNCTION + spacer
-
-        interface_name += column_names[0]
-        for i in range(1, len(column_names)):
-            interface_name += ", " + column_names[i]
-
-        return interface_name
-
-    def get_expectation_id_and_column_name_from_interface_name(interface_name: str) -> (str, list):
-        """
-        Returns GE's expectation ID given an expectation interface name.
-
-        :param interface_name: String with expectation interface name.
-
-        :return: String with GE's expectation ID.
-        """
-        expectation_name, column_name = interface_name.split(" " + EXPECTATION_CONJUNCTION + " ")
-        if ", " not in column_name:
-            expectation_id = SINGLE_COLUMN_EXPECTATIONS_MAP[expectation_name]
-        else:
-            expectation_id = MULTICOLUMN_EXPECTATIONS_MAP[expectation_name]
-        return expectation_id, column_name.split(", ")
-
     @app.callback(
         Output("expectations_checklist", "value"),
         [
@@ -1067,33 +830,6 @@ def set_callbacks(app) -> dash.Dash:
         :return: Empty list to clear checklist selection.
         """
         return EMPTY_LIST
-
-    def expectation_is_already_in_checklist(
-        new_interface_name: str, current_expectations: list
-    ) -> bool:
-        """
-        Returns if an expectation interface name, for a multicolumn expectation, does
-        already exist.
-
-        :param new_interface_name: String with the interface name of the new expectation.
-        :param current_expectations: List with existing expectation interface names.
-
-        :return Bool.
-        """
-        exists = False
-        (
-            new_expectation_id,
-            new_column_name
-        ) = get_expectation_id_and_column_name_from_interface_name(new_interface_name)
-        for interface_name in current_expectations:
-            (
-                expectation_id,
-                column_name
-            ) = get_expectation_id_and_column_name_from_interface_name(interface_name)
-            if new_expectation_id == expectation_id:
-                if set(new_column_name) == set(column_name):
-                    exists = True
-        return exists
 
     @app.callback(
         Output("expectations_checklist", "options"),
@@ -1389,7 +1125,7 @@ def set_callbacks(app) -> dash.Dash:
         Output("validation_confidence_input", "value"),
         Input("validation_dropdown", "options")
     )
-    def clear_validation_confidence(change_in_validation_options: list) -> str:
+    def reset_validation_confidence(change_in_validation_options: list) -> str:
         """
         Clears validation confidence.
 

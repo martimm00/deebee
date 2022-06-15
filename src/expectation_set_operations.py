@@ -2,6 +2,14 @@ from datetime import datetime
 
 from constants.defaults import EMPTY_DICT
 from constants.great_expectations_constants import (
+    TYPE,
+    LENGTH,
+    OR_EQUAL,
+    MIN_VALUE,
+    MAX_VALUE,
+    VALUE_SET_MULTI,
+    VALUE_SET_SINGLE,
+    SUPPORTED_GE_EXP_TYPES,
     NUMERIC_ONLY_EXPECTATIONS,
     NON_NUMERIC_ONLY_EXPECTATIONS,
     MULTICOLUMN_EXPECTATIONS_N_COLUMNS
@@ -15,6 +23,7 @@ from constants.expectation_set_constants import (
     MULTICOLUMN_CONFIG_SEPARATOR
 )
 
+from src.utils import is_list_empty
 from src.json_operations import read_json, write_json
 from src.low_level_operations import (
     exists_path,
@@ -278,3 +287,112 @@ def get_any_column_count_expectations() -> list:
         for e in MULTICOLUMN_EXPECTATIONS_N_COLUMNS
         if MULTICOLUMN_EXPECTATIONS_N_COLUMNS[e] is None
     ]
+
+
+def get_expectation_set_name_from_filename(filename: str) -> str:
+    """
+    Returns the expectation set name given its filename, in other words, it removes
+    the JSON extension.
+
+    :param filename: String with the filename.
+
+    :return: Expectation set name, without the extension.
+    """
+    return filename.split(".")[0]
+
+
+def multicolumn_value_set_matches_expression(value: str) -> bool:
+    """
+    Returns if the value set of a multicolumn expectation matches the required
+    format.
+
+    :param value: String with value set.
+
+    :return: Bool.
+    """
+    matches_format = True
+
+    opening_clause_count = value.count("[")
+    closing_clause_count = value.count("]")
+    if (opening_clause_count + closing_clause_count) % 2 != 0:
+        matches_format = False
+
+    if opening_clause_count != closing_clause_count:
+        matches_format = False
+
+    if matches_format:
+        value_count = 0
+        comma_count = 1
+        for character in value:
+            if character == "[":
+                if comma_count != 1:
+                    matches_format = False
+                value_count = comma_count = 0
+            elif character == "]":
+                if value_count < 2 or comma_count != 1:
+                    matches_format = False
+                comma_count = 0
+            elif character == ",":
+                comma_count += 1
+            else:
+                value_count += 1
+
+    return matches_format
+
+
+def parse_parameter(param_name: str, value) -> any or None:
+    """
+    Returns a parsed parameter in case it is correct. If not, it returns None.
+
+    :param param_name: String with the name of the parameter.
+    :param value: Non-parsed value given to the parameter.
+    """
+    parsed_param = None
+    if param_name == TYPE:
+        if value in SUPPORTED_GE_EXP_TYPES:
+            parsed_param = value
+    elif param_name == LENGTH:
+        if value.isnumeric():
+            parsed_param = value
+    elif param_name == VALUE_SET_SINGLE:
+        value = value.replace(" ", "")
+        parsed_param = value.split(",")
+        for i in range(len(parsed_param)):
+            if parsed_param[i].isnumeric():
+                parsed_param[i] = int(parsed_param[i])
+            else:
+                try:
+                    parsed_param[i] = float(parsed_param[i])
+                except ValueError:
+                    pass
+    elif param_name == MIN_VALUE or param_name == MAX_VALUE:
+        value = value.replace(",", ".")
+        try:
+            parsed_param = float(value)
+        except ValueError:
+            pass
+    elif param_name == VALUE_SET_MULTI:
+        value = value.replace(" ", "").strip(",")
+        if multicolumn_value_set_matches_expression(value):
+            value = value.split("],")
+            value = [
+                pair.replace("[", "").replace("]", "") for pair in value
+            ]
+            value = [pair.split(",") for pair in value]
+            if not is_list_empty(value):
+                if all([len(pair) == 2 for pair in value]):
+                    parsed_param = value
+                    for i in range(len(value)):
+                        for j in range(2):
+                            parsed_param[i][j] = parsed_param[i][j].replace("'", "")
+                            if parsed_param[i][j].isnumeric():
+                                parsed_param[i][j] = int(parsed_param[i][j])
+                            else:
+                                try:
+                                    parsed_param[i][j] = float(parsed_param[i][j])
+                                except ValueError:
+                                    pass
+                    parsed_param = [tuple(pair) for pair in parsed_param]
+    elif param_name == OR_EQUAL:
+        parsed_param = False if is_list_empty(value) else True
+    return parsed_param
