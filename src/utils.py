@@ -63,7 +63,7 @@ def read_csv_dataset(path: os.path, sep=";", n_rows=None, type_dict=None) -> pd.
     return pd.read_csv(path, sep=sep, nrows=n_rows, dtype=type_dict)
 
 
-def read_excel_dataset(path: os.path, sep=";", n_rows=None, type_dict=None) -> pd.DataFrame:
+def read_excel_dataset(path: os.path, n_rows=None, type_dict=None) -> pd.DataFrame:
     """
     Returns a Pandas DataFrame given the specified path of an XLSX file.
 
@@ -74,7 +74,7 @@ def read_excel_dataset(path: os.path, sep=";", n_rows=None, type_dict=None) -> p
 
     :return: Pandas DataFrame.
     """
-    return pd.read_excel(path, sep=sep, nrows=n_rows, dtype=type_dict)
+    return pd.read_excel(path, nrows=n_rows, dtype=type_dict)
 
 
 def read_dataset(path: os.path, sep=";", n_rows=None, type_dict=None) -> pd.DataFrame or None:
@@ -98,9 +98,41 @@ def read_dataset(path: os.path, sep=";", n_rows=None, type_dict=None) -> pd.Data
     if is_csv_file_by_name(file_name):
         dataset = read_csv_dataset(path, sep=sep, n_rows=n_rows, type_dict=type_dict)
     elif is_excel_file_by_name(file_name):
-        dataset = read_excel_dataset(path, sep=sep, n_rows=n_rows, type_dict=type_dict)
+        dataset = read_excel_dataset(path, n_rows=n_rows, type_dict=type_dict)
 
     return dataset
+
+
+def write_csv_dataset(dataset: pd.DataFrame, path: os.path, sep=";") -> None:
+    """
+    Writes Pandas DataFrame to CSV format.
+    """
+    if sep is None:
+        sep = ";"
+    dataset.to_csv(path, sep=sep, index=False)
+
+
+def write_excel_dataset(dataset: pd.DataFrame, path: os.path) -> None:
+    """
+    Writes Pandas DataFrame to CSV format.
+    """
+    dataset.to_excel(path, index=False)
+
+
+def write_dataset(dataset: pd.DataFrame, path: os.path, sep=";") -> None:
+    """
+    This function acts a wrapper to write a dataset to a file, no matter the file format.
+
+    :param dataset: Pandas DataFrame containing the dataset to be written.
+    :param path: Path where the dataset can be found.
+    :param sep: Separator character.
+    """
+    file_name = get_file_name_by_path(path)
+
+    if is_csv_file_by_name(file_name):
+        write_csv_dataset(dataset, path, sep=sep)
+    elif is_excel_file_by_name(file_name):
+        write_excel_dataset(dataset, path)
 
 
 def infer_csv_separator(file_path: os.path) -> str or None:
@@ -112,6 +144,7 @@ def infer_csv_separator(file_path: os.path) -> str or None:
     """
     separator = None
     file_name = get_file_name_by_path(file_path)
+    print(file_name, file_path)
     if is_csv_file_by_name(file_name):
         try:
             with open(file_path, "rb") as csvfile:

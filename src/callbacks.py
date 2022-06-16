@@ -7,6 +7,7 @@ from pandas.core.dtypes.common import is_string_dtype, is_numeric_dtype
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
 from constants.path_constants import GREAT_EXPECTATIONS_PATH
+from constants.supported_constants import SUPPORTED_CORRECTION_DATA_TYPES
 from constants.great_expectations_constants import (
     TYPE,
     LENGTH,
@@ -27,7 +28,8 @@ from src.expectation_suite_operations import get_expectation_suite_name_object
 from src.dataset_operations import (
     delete_datasets,
     dataset_can_be_imported,
-    is_new_dataset_name_valid
+    is_new_dataset_name_valid,
+    get_imported_dataset_names
 )
 from src.validation_operations import (
     validate_dataset,
@@ -37,6 +39,7 @@ from src.validation_operations import (
 from src.utils import (
     get_value,
     read_dataset,
+    write_dataset,
     is_list_empty,
     list_has_one_item,
     infer_csv_separator,
@@ -62,6 +65,7 @@ from src.expectation_set_operations import (
 from src.low_level_operations import (
     move,
     rename,
+    make_copy,
     join_paths,
     delete_file,
     has_extension,
@@ -138,11 +142,14 @@ def set_callbacks(app) -> dash.Dash:
             Output("imported_datasets_checklist", "value"),
             Output("rename_dataset_input", "value"),
             Output("imported_datasets_dropdown", "options"),
+            Output("dataset_correction_dropdown", "options")
         ],
         [
             Input("dataset_uploader", "isCompleted"),
             Input("delete_dataset_button", "n_clicks"),
             Input("rename_dataset_button", "n_clicks"),
+            Input("finish_editing_types_button", "n_clicks"),
+            Input("finish_removing_duplicated_rows_button", "n_clicks")
         ],
         [
             State("imported_datasets_checklist", "options"),
@@ -155,6 +162,8 @@ def set_callbacks(app) -> dash.Dash:
         new_upload,
         delete: int,
         rename_dataset: int,
+        finish_editing_type: int,
+        finish_removing_duplicates: int,
         available_options: list,
         selected_datasets: list,
         uploaded_file_names: list,
@@ -166,6 +175,8 @@ def set_callbacks(app) -> dash.Dash:
         :param new_upload: A new import has been performed.
         :param delete: Delete button has been clicked.
         :param rename_dataset: Rename button has been clicked.
+        :param finish_editing_type: Number of clicks.
+        :param finish_removing_duplicates: Number of clicks.
         :param available_options: List with current checklist options.
         :param uploaded_file_names: List containing the name of the imported dataset.
         :param selected_datasets: List with names of datasets selected by the user.
@@ -220,7 +231,13 @@ def set_callbacks(app) -> dash.Dash:
 
         # Getting current file names in the directory
         available_options = refresh_imported_dataset_listing()
-        return available_options, EMPTY_LIST, EMPTY_STRING, available_options
+        return (
+            available_options,
+            EMPTY_LIST,
+            EMPTY_STRING,
+            available_options,
+            available_options
+        )
 
     @app.callback(
         [
@@ -255,7 +272,7 @@ def set_callbacks(app) -> dash.Dash:
                 separator = infer_csv_separator(dataset_path)
                 dataset = read_dataset(dataset_path, sep=separator, n_rows=20)
                 body_content = dbc.Table.from_dataframe(
-                    dataset, striped=True, bordered=True, hover=True
+                    dataset.astype(str), striped=True, bordered=True, hover=True
                 )
                 modal_state = True
                 modal_title = f"{dataset_name} preview"
@@ -986,10 +1003,7 @@ def set_callbacks(app) -> dash.Dash:
         return compatible_expectations
 
     @app.callback(
-        [
-            Output("validation_dropdown", "options"),
-            Output("validation_dropdown", "value"),
-        ],
+        Output("validation_dropdown", "options"),
         [
             Input("validate_dataset_button", "n_clicks"),
             Input("delete_validations_button", "n_clicks")
@@ -1037,47 +1051,67 @@ def set_callbacks(app) -> dash.Dash:
         move_validation_to_app_system(dataset_name, confidence)
 
         available_validations = sorted(get_validation_file_names())
-        selected_by_default = ""
-        if not is_list_empty(available_validations):
-            selected_by_default = available_validations[0]
-        return available_validations, selected_by_default
+
+        return available_validations
 
     @app.callback(
+        Output("validation_operations_div", "style"),
         [
-            Output("delete_validations_div", "style"),
-            Output("validation_operations_div", "style")
-        ],
-        [
+            Input("validation_dropdown", "value"),
             Input("validation_dropdown", "options"),
-            Input("delete_validations_button", "n_clicks")
         ],
-        [
-            State("delete_validations_div", "style"),
-        ]
+        State("validation_operations_div", "style")
     )
-    def toggle_delete_validations_div(
-        make_validation: int,
-        delete_validations: int,
-        div_style: dict,
+    def toggle_validation_actions_div(
+        selected_validation: str,
+        available_validations: list,
+        actions_div_style: dict,
     ) -> (dict, dict):
         """
         Displays or hides button to delete all validations, depending on whether there
         are any validations to be deleted or not.
 
-        :param make_validation: Number of clicks.
-        :param delete_validations: Number of clicks.
-        :param div_style: Dictionary with current style of the Div containing the delete
-        button.
+        :param selected_validation: String with selected validation name.
+        :param available_validations: List with available validations in validation
+        dropdown.
+        :param actions_div_style: Dictionary with current style of the Div containing
+        validation operations button.
 
         :return: Dictionary with updated style.
         """
-        available_validations = get_validation_file_names()
-        if is_list_empty(available_validations)\
-                or is_trigger("delete_validations_button"):
-            div_style = hide_component(div_style)
+        if selected_validation is None or is_list_empty(available_validations):
+            actions_div_style = hide_component(actions_div_style)
         else:
-            div_style = display_component(div_style)
-        return div_style, div_style
+            actions_div_style = display_component(actions_div_style)
+
+        return actions_div_style
+
+    @app.callback(
+        Output("delete_validations_div", "style"),
+        Input("validation_dropdown", "options"),
+        State("delete_validations_div", "style")
+    )
+    def toggle_delete_validations_div(
+        available_validations: list,
+        delete_div_style: dict,
+    ) -> (dict, dict):
+        """
+        Displays or hides button to delete all validations, depending on whether there
+        are any validations to be deleted or not.
+
+        :param available_validations: List with available validations in validation
+        dropdown.
+        :param delete_div_style: Dictionary with current style of the Div containing the
+        delete button.
+
+        :return: Dictionary with updated style.
+        """
+        if is_list_empty(available_validations):
+            delete_div_style = hide_component(delete_div_style)
+        else:
+            delete_div_style = display_component(delete_div_style)
+
+        return delete_div_style
 
     @app.callback(
         Output("validation_confidence_input", "value"),
@@ -1126,5 +1160,253 @@ def set_callbacks(app) -> dash.Dash:
         """
         validation_path = get_validation_path(selected_validation)
         return dcc.send_file(validation_path)
+
+    @app.callback(
+        Output("edit_formats_modal", "is_open"),
+        [
+            Input("open_type_editor", "n_clicks"),
+            Input("finish_editing_types_button", "n_clicks")
+        ],
+        [
+            State("dataset_correction_dropdown", "value"),
+            State("edit_formats_modal", "is_open")
+        ]
+    )
+    def toggle_table_type_editor(
+        edit_format: int, finish: int, selected_dataset: str, modal_state
+    ) -> bool:
+        """
+        Toggles table format editor modal state.
+
+        :param edit_format: Number of clicks.
+        :param finish: Number of clicks.
+        :param selected_dataset: String with selected dataset.
+        :param modal_state: Current modal state.
+
+        :return: Bool.
+        """
+        if is_trigger("open_type_editor") and selected_dataset is not None:
+            modal_state = True
+        elif is_trigger("finish_editing_types_button"):
+            modal_state = False
+        return modal_state
+
+    @app.callback(
+        Output("remove_duplicated_rows_modal", "is_open"),
+        [
+            Input("open_duplicated_rows_remover", "n_clicks"),
+            Input("finish_removing_duplicated_rows_button", "n_clicks")
+        ],
+        [
+            State("dataset_correction_dropdown", "value"),
+            State("remove_duplicated_rows_modal", "is_open")
+        ]
+    )
+    def toggle_duplicated_rows_remover(
+        remove_duplicates: int, finish: int, selected_dataset: str, modal_state
+    ) -> bool:
+        """
+        Toggles table format editor modal state.
+
+        :param remove_duplicates: Number of clicks.
+        :param finish: Number of clicks.
+        :param selected_dataset: String with selected dataset.
+        :param modal_state: Current modal state.
+
+        :return: Bool.
+        """
+        if is_trigger("open_duplicated_rows_remover") and selected_dataset is not None:
+            modal_state = True
+        elif is_trigger("finish_removing_duplicated_rows_button"):
+            modal_state = False
+        return modal_state
+
+    @app.callback(
+        Output("correction_table_columns_dropdown", "options"),
+        Input("open_type_editor", "n_clicks"),
+        State("dataset_correction_dropdown", "value")
+    )
+    def fill_correction_table_columns_dropdown(open_editor: int, selected_dataset: str) -> list:
+        """
+        Fills the checklist with columns in selected dataset.
+
+        :param open_editor: Number of clicks.
+        :param selected_dataset: String with selected dataset.
+
+        :return: List with table column names.
+        """
+        table_columns = EMPTY_LIST
+
+        if is_trigger("open_type_editor") and selected_dataset is not None:
+            dataset_path = get_imported_dataset_path(selected_dataset)
+            sep = infer_csv_separator(dataset_path)
+            table = read_dataset(dataset_path, n_rows=2, sep=sep)
+            table_columns = table.columns.tolist()
+
+        return table_columns
+
+    @app.callback(
+        Output("correction_table_columns_checklist", "options"),
+        Input("open_duplicated_rows_remover", "n_clicks"),
+        State("dataset_correction_dropdown", "value")
+    )
+    def fill_correction_table_columns_checklist(open_remover: int, selected_dataset: str) -> list:
+        """
+        Fills the checklist with columns in selected dataset.
+
+        :param open_remover: Number of clicks.
+        :param selected_dataset: String with selected dataset.
+
+        :return: List with table column names.
+        """
+        table_columns = EMPTY_LIST
+
+        if is_trigger("open_duplicated_rows_remover") and selected_dataset is not None:
+            dataset_path = get_imported_dataset_path(selected_dataset)
+            sep = infer_csv_separator(dataset_path)
+            table = read_dataset(dataset_path, n_rows=2, sep=sep)
+            table_columns = table.columns.tolist()
+
+        return table_columns
+
+    @app.callback(
+        Output("types_dropdown", "options"),
+        Input("correction_table_columns_dropdown", "value"),
+        State("dataset_correction_dropdown", "value")
+    )
+    def change_supported_types_for_type_correction(
+        selected_column: str, selected_dataset: str
+    ) -> list:
+        available_types = SUPPORTED_CORRECTION_DATA_TYPES
+        if is_trigger("correction_table_columns_dropdown"):
+            if selected_dataset is not None and selected_column:
+
+                dataset_path = get_imported_dataset_path(selected_dataset)
+                sep = infer_csv_separator(dataset_path)
+                table = read_dataset(dataset_path, n_rows=25, sep=sep)
+
+                available_types = list()
+                for sdt in SUPPORTED_CORRECTION_DATA_TYPES:
+                    try:
+                        table[selected_column].astype(sdt)
+                        available_types.append(sdt)
+                    except ValueError:
+                        continue
+
+        return available_types
+
+    def build_type_corrected_dataset_name(original_name: str) -> str:
+        """
+        Builds a new name for a type corrected dataset, given its original name.
+
+        :param original_name: String with original dataset name.
+        """
+        name, extension = original_name.split(".")
+        if "_no_duplicates" in name:
+            name = name.replace("_no_duplicates", "")
+            name += "_corrected"
+        else:
+            name += "_type_corrected"
+        return name + "." + extension
+
+    @app.callback(
+        Output("write_type_corrected_dataset_output_div", "children"),
+        Input("edit_type_button", "n_clicks"),
+        [
+            State("dataset_correction_dropdown", "value"),
+            State("correction_table_columns_dropdown", "value"),
+            State("types_dropdown", "value")
+        ],
+        prevent_initial_call=True
+    )
+    def change_table_column_type(
+        edit: int, selected_table: str, selected_column: str, selected_type: str
+    ) -> None:
+        new_dataset_name = build_type_corrected_dataset_name(selected_table)
+        copy_path = get_imported_dataset_path(new_dataset_name)
+
+        # If there is not a corrected dataset already, create a copy of the original one
+        current_datasets = get_imported_dataset_names()
+        if new_dataset_name not in current_datasets:
+            original_path = get_imported_dataset_path(selected_table)
+            make_copy(original_path, copy_path)
+
+        sep = infer_csv_separator(copy_path)
+        table = read_dataset(copy_path, sep=sep)
+        table[selected_column] = table[selected_column].astype(selected_type)
+
+        write_dataset(table, copy_path, sep=sep)
+
+    def build_duplicates_removed_dataset_name(original_name: str) -> str:
+        """
+        Builds a new name for a dataset whose duplicated rows have been removed, given
+        its original name.
+
+        :param original_name: String with original dataset name.
+        """
+        name, extension = original_name.split(".")
+        if "_type_corrected" in name:
+            name = name.replace("_type_corrected", "")
+            name += "_corrected"
+        else:
+            name += "_no_duplicates"
+        return name + "." + extension
+
+    @app.callback(
+        Output("write_removed_duplicates_dataset_output_div", "children"),
+        Input("remove_duplicated_rows_button", "n_clicks"),
+        [
+            State("dataset_correction_dropdown", "value"),
+            State("correction_table_columns_checklist", "value")
+        ]
+    )
+    def remove_duplicated_rows_from_table(
+        remove: int, selected_dataset: str, key_columns: list
+    ) -> None:
+        """
+        Removes duplicated rows in a table based on fuzzy string matching applied to
+        string columns. Those columns will be called key columns, and the user can
+        select them in the interface.
+
+        :param remove: Number of clicks.
+        :param selected_dataset: String with the name of the dataset to be corrected.
+        :param key_columns: List with columns selected by the user.
+        """
+
+        
+    @app.callback(
+        [
+            Output("correction_table_columns_dropdown", "value"),
+            Output("types_dropdown", "value")
+        ],
+        [
+            Input("open_type_editor", "n_clicks"),
+            Input("edit_type_button", "n_clicks")
+        ]
+    )
+    def clear_values_in_type_editor(open_editor: int, edit: int) -> (str, str):
+        """
+        Clears values in column type editor.
+
+        :param open_editor: Number of clicks.
+        :param edit: Number of clicks.
+        """
+        return EMPTY_STRING, EMPTY_STRING
+
+    @app.callback(
+        Output("correction_table_columns_checklist", "value"),
+        [
+            Input("open_duplicated_rows_remover", "n_clicks"),
+            Input("remove_duplicated_rows_button", "n_clicks")
+        ]
+    )
+    def clear_values_in_duplicated_row_remover(open_remover: int, remove: int) -> list:
+        """
+        Clears values in duplicated rows remover.
+
+        :param open_remover: Number of clicks.
+        :param remove: Number of clicks.
+        """
+        return EMPTY_LIST
 
     return app

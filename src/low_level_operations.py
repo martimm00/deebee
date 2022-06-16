@@ -360,6 +360,16 @@ def move(origin: os.path, destination: os.path) -> None:
         print("ERROR:", m)
 
 
+def make_copy(original: os.path, copy: os.path) -> None:
+    """
+    Makes a copy of the original file, with the path or name of the copy file.
+
+    :param original: Original file poth.
+    :param copy: Copy file path.
+    """
+    shutil.copyfile(original, copy)
+
+
 def rename(directory: os.path, old_name: str, new_name: str) -> None:
     """
     This function can be used to rename any basename element in a path file, such as

@@ -5,6 +5,7 @@ import dash_uploader as du
 import dash_bootstrap_components as dbc
 
 from constants.defaults import EMPTY_LIST, EMPTY_STRING
+from constants.supported_constants import SUPPORTED_CORRECTION_DATA_TYPES
 from constants.layout_shortcut_constants import (
     INPUT_STYLE,
     MAIN_COL_STYLE,
@@ -301,6 +302,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                     dcc.Dropdown(
                                         EMPTY_LIST,
                                         id="validation_dropdown",
+                                        placeholder="Select a validation",
                                         style={
                                             "marginTop": "20px",
                                             "marginBottom": "20px"
@@ -392,6 +394,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                                 color="secondary"
                                                             )
                                                         ],
+                                                        style={"textAlign": "right"}
                                                     ),
                                                 ],
                                                 justify="between"
@@ -399,10 +402,47 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                         ],
                                         id="validation_operations_div",
                                         style={"display": "none"}
+                                    ),
+                                    html.H3(
+                                        "Correct",
+                                        style={
+                                            "marginTop": "20px",
+                                            "marginBottom": "20px"
+                                        }
+                                    ),
+                                    dcc.Dropdown(
+                                        id="dataset_correction_dropdown",
+                                        options=EMPTY_LIST,
+                                        placeholder="Select a table",
+                                        style={"marginBottom": "20px"}
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                [
+                                                    dbc.Button(
+                                                        "Edit types",
+                                                        id="open_type_editor",
+                                                        color="secondary"
+                                                    )
+                                                ],
+                                            ),
+                                            dbc.Col(
+                                                [
+                                                    dbc.Button(
+                                                        "Remove duplicated rows",
+                                                        id="open_duplicated_rows_remover",
+                                                        color="secondary"
+                                                    )
+                                                ],
+                                                style={"textAlign": "right"}
+                                            )
+                                        ],
+                                        justify="between"
                                     )
                                 ],
                                 style=MAIN_COL_STYLE
-                            )
+                            ),
                         ],
                         justify="evenly"
                     )
@@ -777,10 +817,90 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                     "padding": "30px"
                 }
             ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(
+                        html.H1("Edit table formats")
+                    ),
+                    dbc.ModalBody(
+                        [
+                            html.H5("Select column"),
+                            dcc.Dropdown(
+                                id="correction_table_columns_dropdown",
+                                options=EMPTY_LIST,
+                                style={"marginBottom": "20px"}
+                            ),
+                            html.H5("Select format"),
+                            dcc.Dropdown(
+                                id="types_dropdown",
+                                options=SUPPORTED_CORRECTION_DATA_TYPES,
+                                style={"marginBottom": "20px"}
+                            ),
+                            dbc.Button(
+                                "Convert",
+                                id="edit_type_button",
+                                color="secondary"
+                            )
+                        ]
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Finish",
+                                id="finish_editing_types_button",
+                                color="secondary"
+                            )
+                        ]
+                    )
+                ],
+                id="edit_formats_modal",
+            ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(
+                        html.H1("Remove duplicated rows")
+                    ),
+                    dbc.ModalBody(
+                        [
+                            html.H5("Select key columns"),
+                            dcc.Checklist(
+                                id="correction_table_columns_checklist",
+                                options=EMPTY_LIST,
+                                style=CHECKLIST_DIV_STYLE,
+                                labelStyle={"display": "block"},
+                                inputStyle={"marginRight": "15px"}
+                            ),
+                            dbc.Button(
+                                "Apply",
+                                id="remove_duplicated_rows_button",
+                                color="secondary"
+                            )
+                        ]
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Finish",
+                                id="finish_removing_duplicated_rows_button",
+                                color="secondary"
+                            )
+                        ]
+                    )
+                ],
+                id="remove_duplicated_rows_modal",
+            ),
 
             # Auxiliary Divs
             html.Div(id="profile_report_output_div", style={"display": "none"}),
             html.Div(id="open_validation_result_output_div", style={"display": "none"}),
+            html.Div(
+                id="write_type_corrected_dataset_output_div",
+                style={"display": "none"}
+            ),
+            html.Div(
+                id="write_removed_duplicates_dataset_output_div",
+                style={"display": "none"}
+            ),
 
             # Download components
             dcc.Download(id="validation_result_downloader")
