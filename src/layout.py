@@ -355,7 +355,7 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                                 [
                                                     dcc.Input(
                                                         id="validation_confidence_input",
-                                                        value=100,
+                                                        value="100",
                                                         style={
                                                             "height": "38px",
                                                             "width": "55px",
@@ -870,10 +870,46 @@ def create_layout(app: dash.Dash) -> dash.Dash:
                                 labelStyle={"display": "block"},
                                 inputStyle={"marginRight": "15px"}
                             ),
-                            dbc.Button(
-                                "Apply",
-                                id="remove_duplicated_rows_button",
-                                color="secondary"
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            html.H5("String matching threshold (%):"),
+                                            dcc.Input(
+                                                id="string_matching_threshold_input",
+                                                value="90",
+                                                style={
+                                                    "height": "38px",
+                                                    "width": "55px",
+                                                    "border": "3px black solid",
+                                                    "borderRadius": "20px",
+                                                    "paddingLeft": "10px",
+                                                    "paddingRight": "10px",
+                                                    "marginBottom": "15px",
+                                                    "marginRight": "20px"
+                                                }
+                                            ),
+                                        ]
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dcc.Checklist(
+                                                id="partial_ratio_checklist",
+                                                options=["Partial"],
+                                                labelStyle={"display": "block"},
+                                                inputStyle={"marginRight": "15px"},
+                                                style={"marginBottom": "20px"}
+                                            ),
+                                            dbc.Button(
+                                                "Apply",
+                                                id="remove_duplicated_rows_button",
+                                                color="secondary"
+                                            ),
+                                        ],
+                                        style={"textAlign": "right"},
+                                    )
+                                ],
+                                justify="between"
                             )
                         ]
                     ),

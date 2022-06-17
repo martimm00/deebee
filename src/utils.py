@@ -144,7 +144,6 @@ def infer_csv_separator(file_path: os.path) -> str or None:
     """
     separator = None
     file_name = get_file_name_by_path(file_path)
-    print(file_name, file_path)
     if is_csv_file_by_name(file_name):
         try:
             with open(file_path, "rb") as csvfile:

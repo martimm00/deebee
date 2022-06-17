@@ -1,4 +1,5 @@
 import dash
+import pandas as pd
 from dash import dcc
 import great_expectations as ge
 from dash import Output, Input, State
@@ -29,7 +30,8 @@ from src.dataset_operations import (
     delete_datasets,
     dataset_can_be_imported,
     is_new_dataset_name_valid,
-    get_imported_dataset_names
+    get_imported_dataset_names, get_string_matching_dict, build_duplicates_removed_dataset_name,
+    build_type_corrected_dataset_name
 )
 from src.validation_operations import (
     validate_dataset,
@@ -873,7 +875,7 @@ def set_callbacks(app) -> dash.Dash:
             State("expectations_checklist", "value")
         ]
     )
-    def add_or_delete_expectation_from_set(
+    def update_set_expectations(
         open_set_definer: int,
         add_single_column: int,
         add_multicolumn: int,
@@ -1265,7 +1267,11 @@ def set_callbacks(app) -> dash.Dash:
             dataset_path = get_imported_dataset_path(selected_dataset)
             sep = infer_csv_separator(dataset_path)
             table = read_dataset(dataset_path, n_rows=2, sep=sep)
-            table_columns = table.columns.tolist()
+            table_columns = [
+                column_name
+                for column_name in table.columns.to_list()
+                if is_string_dtype(table[column_name])
+            ]
 
         return table_columns
 
@@ -1295,20 +1301,6 @@ def set_callbacks(app) -> dash.Dash:
 
         return available_types
 
-    def build_type_corrected_dataset_name(original_name: str) -> str:
-        """
-        Builds a new name for a type corrected dataset, given its original name.
-
-        :param original_name: String with original dataset name.
-        """
-        name, extension = original_name.split(".")
-        if "_no_duplicates" in name:
-            name = name.replace("_no_duplicates", "")
-            name += "_corrected"
-        else:
-            name += "_type_corrected"
-        return name + "." + extension
-
     @app.callback(
         Output("write_type_corrected_dataset_output_div", "children"),
         Input("edit_type_button", "n_clicks"),
@@ -1322,12 +1314,12 @@ def set_callbacks(app) -> dash.Dash:
     def change_table_column_type(
         edit: int, selected_table: str, selected_column: str, selected_type: str
     ) -> None:
-        new_dataset_name = build_type_corrected_dataset_name(selected_table)
-        copy_path = get_imported_dataset_path(new_dataset_name)
+        new_table_name = build_type_corrected_dataset_name(selected_table)
+        copy_path = get_imported_dataset_path(new_table_name)
 
         # If there is not a corrected dataset already, create a copy of the original one
         current_datasets = get_imported_dataset_names()
-        if new_dataset_name not in current_datasets:
+        if new_table_name not in current_datasets:
             original_path = get_imported_dataset_path(selected_table)
             make_copy(original_path, copy_path)
 
@@ -1337,31 +1329,23 @@ def set_callbacks(app) -> dash.Dash:
 
         write_dataset(table, copy_path, sep=sep)
 
-    def build_duplicates_removed_dataset_name(original_name: str) -> str:
-        """
-        Builds a new name for a dataset whose duplicated rows have been removed, given
-        its original name.
-
-        :param original_name: String with original dataset name.
-        """
-        name, extension = original_name.split(".")
-        if "_type_corrected" in name:
-            name = name.replace("_type_corrected", "")
-            name += "_corrected"
-        else:
-            name += "_no_duplicates"
-        return name + "." + extension
-
     @app.callback(
         Output("write_removed_duplicates_dataset_output_div", "children"),
         Input("remove_duplicated_rows_button", "n_clicks"),
         [
             State("dataset_correction_dropdown", "value"),
-            State("correction_table_columns_checklist", "value")
-        ]
+            State("correction_table_columns_checklist", "value"),
+            State("string_matching_threshold_input", "value"),
+            State("partial_ratio_checklist", "value")
+        ],
+        prevent_initial_call=True
     )
     def remove_duplicated_rows_from_table(
-        remove: int, selected_dataset: str, key_columns: list
+        remove: int,
+        selected_table: str,
+        key_columns: list,
+        threshold: str,
+        partial_ratio: list
     ) -> None:
         """
         Removes duplicated rows in a table based on fuzzy string matching applied to
@@ -1369,11 +1353,47 @@ def set_callbacks(app) -> dash.Dash:
         select them in the interface.
 
         :param remove: Number of clicks.
-        :param selected_dataset: String with the name of the dataset to be corrected.
+        :param selected_table: String with the name of the dataset to be corrected.
         :param key_columns: List with columns selected by the user.
+        :param threshold: String with string matching threshold.
+        :param partial_ratio: List with selected value in partial ratio checklist.
         """
+        if threshold.isnumeric() and key_columns:
+            threshold = int(threshold)
+            new_table_name = build_duplicates_removed_dataset_name(selected_table)
+            copy_path = get_imported_dataset_path(new_table_name)
 
-        
+            # If there is not a corrected dataset already, create a copy of the original
+            # one
+            current_datasets = get_imported_dataset_names()
+            if new_table_name not in current_datasets:
+                original_path = get_imported_dataset_path(selected_table)
+                make_copy(original_path, copy_path)
+
+            sep = infer_csv_separator(copy_path)
+            table = read_dataset(copy_path, sep=sep)
+
+            # Standard duplicated rows dropping
+            table.drop_duplicates(subset=key_columns, inplace=True)
+
+            matching_dict = get_string_matching_dict(
+                table, key_columns, bool(partial_ratio))
+
+            matching_df = pd.DataFrame(matching_dict)
+            matching_df["low_score"] = pd.Series([True] * len(matching_df))
+            for column_name in key_columns:
+                matching_df["low_score"] = matching_df[column_name] <= threshold
+            matching_rows_list = matching_df[
+                matching_df["low_score"] == False
+            ]["row_pair"].to_list()
+
+            for pair in matching_rows_list:
+                first_line, second_line = pair.split(",")
+                if second_line in table.index:
+                    table.drop(index=second_line, inplace=True)
+
+            write_dataset(table, copy_path, sep=sep)
+
     @app.callback(
         [
             Output("correction_table_columns_dropdown", "value"),
@@ -1394,19 +1414,46 @@ def set_callbacks(app) -> dash.Dash:
         return EMPTY_STRING, EMPTY_STRING
 
     @app.callback(
-        Output("correction_table_columns_checklist", "value"),
+        [
+            Output("correction_table_columns_checklist", "value"),
+            Output("string_matching_threshold_input", "value"),
+            Output("partial_ratio_checklist", "value")
+        ],
         [
             Input("open_duplicated_rows_remover", "n_clicks"),
             Input("remove_duplicated_rows_button", "n_clicks")
         ]
     )
-    def clear_values_in_duplicated_row_remover(open_remover: int, remove: int) -> list:
+    def clear_values_in_duplicated_row_remover(
+        open_remover: int, remove: int
+    ) -> (list, str, list):
         """
         Clears values in duplicated rows remover.
 
         :param open_remover: Number of clicks.
         :param remove: Number of clicks.
         """
-        return EMPTY_LIST
+        return EMPTY_LIST, "90", EMPTY_LIST
+
+    @app.callback(
+        Output("dataset_correction_dropdown", "value"),
+        [
+            Input("finish_editing_types_button", "n_clicks"),
+            Input("finish_removing_duplicated_rows_button", "n_clicks")
+        ]
+    )
+    def clear_selected_dataset_to_be_corrected(
+        finish_editing: int, finish_removing_duplicates: int
+    ) -> None:
+        """
+        Returns None to clear selected dataset to be corrected in the correction dataset
+        dropdown.
+
+        :param finish_editing: Number of clicks.
+        :param finish_removing_duplicates: Number of clicks.
+
+        :return: None.
+        """
+        return None
 
     return app
